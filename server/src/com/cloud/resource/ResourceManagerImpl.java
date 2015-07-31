@@ -1479,8 +1479,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 final Map.Entry<String, ResourceStateAdapter> item = it.next();
                 final ResourceStateAdapter adapter = item.getValue();
 
-                final String msg = "Dispatching resource state event " + event + " to " + item.getKey();
-                s_logger.debug(msg);
+                s_logger.debug("Dispatching resource state event " + event + " to " + item.getKey());
 
                 if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED) {
                     result = adapter.createHostVOForConnectedAgent((HostVO) args[0], (StartupCommand[]) args[1]);
@@ -1923,8 +1922,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags,
             final boolean forRebalance) {
-        final Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance);
-        return host;
+        return createHostAndAgent(resource, details, old, hostTags, forRebalance);
     }
 
     @Override
@@ -1934,8 +1932,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Can't find zone with id " + zoneId);
         }
 
-        final Map<String, String> details = hostDetails;
-        final String guid = details.get("guid");
+        final String guid = hostDetails.get("guid");
         final List<HostVO> currentHosts = listAllUpAndEnabledHostsInOneZoneByType(hostType, zoneId);
         for (final HostVO currentHost : currentHosts) {
             if (currentHost.getGuid().equals(guid)) {
