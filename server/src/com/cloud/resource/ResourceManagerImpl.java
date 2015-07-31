@@ -22,7 +22,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -311,9 +310,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public void unregisterResourceEvent(final ResourceListener listener) {
         synchronized (_lifeCycleListeners) {
-            final Iterator it = _lifeCycleListeners.entrySet().iterator();
-            while (it.hasNext()) {
-                final Map.Entry<Integer, List<ResourceListener>> items = (Map.Entry<Integer, List<ResourceListener>>) it.next();
+            for (final Map.Entry<Integer, List<ResourceListener>> items : _lifeCycleListeners.entrySet()) {
                 final List<ResourceListener> lst = items.getValue();
                 lst.remove(listener);
             }
@@ -1473,10 +1470,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private Object dispatchToStateAdapters(final ResourceStateAdapter.Event event, final boolean singleTaker, final Object... args) {
         synchronized (_resourceStateAdapters) {
-            final Iterator<Map.Entry<String, ResourceStateAdapter>> it = _resourceStateAdapters.entrySet().iterator();
             Object result = null;
-            while (it.hasNext()) {
-                final Map.Entry<String, ResourceStateAdapter> item = it.next();
+            for (final Map.Entry<String, ResourceStateAdapter> item : _resourceStateAdapters.entrySet()) {
                 final ResourceStateAdapter adapter = item.getValue();
 
                 s_logger.debug("Dispatching resource state event " + event + " to " + item.getKey());
