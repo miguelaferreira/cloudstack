@@ -135,7 +135,6 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         if (networkObject == null) {
             return null;
         }
-        // Override the broadcast domain type
         networkObject.setBroadcastDomainType(BroadcastDomainType.Lswitch);
 
         return networkObject;
@@ -148,7 +147,6 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
 
         final long dcId = dest.getDataCenter().getId();
 
-        // get physical network id
         Long physicalNetworkId = network.getPhysicalNetworkId();
 
         // physical network id can be null in Guest Network in Basic zone, so locate the physical network
@@ -173,7 +171,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
             name = ((NetworkVO) network).getUuid();
         }
         if (name.length() > MAX_NAME_LENGTH) {
-            name = name.substring(0, MAX_NAME_LENGTH - 1); // max length 40
+            name = name.substring(0, MAX_NAME_LENGTH - 1);
         }
 
         final List<NiciraNvpDeviceVO> devices = niciraNvpDao.listByPhysicalNetwork(physicalNetworkId);
