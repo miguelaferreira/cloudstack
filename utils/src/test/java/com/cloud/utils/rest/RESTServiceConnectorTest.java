@@ -19,20 +19,28 @@
 
 package com.cloud.utils.rest;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpMethodBase;
+import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -187,6 +195,25 @@ public class RESTServiceConnectorTest {
 
         // Assert/verify
         verify(gm, times(2)).getStatusCode();
+    }
+
+    @Test
+    public void testExecuteMethodFollowingRedirect() throws Exception {
+        final RESTValidationStrategy validation = spy(new RESTValidationStrategy());
+        doNothing().when(validation).login(anyString(), (HttpClient) any());
+        connector.validation = validation;
+        connector.setAdminCredentials("admin", "adminpass");
+        connector.setControllerAddress("localhost");
+
+        final HttpMethodBase method = mock(HttpMethodBase.class);
+        when(method.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
+
+        when(method.getURI()).thenReturn(new URI(new URL("HTTPS", "newhost", "/something").toString(), false));
+
+        connector.executeMethod(method);
+
+        assertThat(connector.validation.getHost(), equalTo("newhost"));
+        verify(connector.validation, times(2)).login(anyString(), (HttpClient) any());
     }
 
     @Test

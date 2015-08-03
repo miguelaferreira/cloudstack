@@ -26,6 +26,7 @@ import java.net.URL;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethodBase;
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Logger;
 
@@ -98,13 +99,34 @@ public class RESTValidationStrategy {
             throw new CloudstackRESTException("Hostname/credentials are null or empty");
         }
 
-        client.executeMethod(method);
-        if (HttpStatusCodeHelper.isUnauthorized(method.getStatusCode())) {
-            method.releaseConnection();
-            // login and try again
-            login(protocol, client);
-            client.executeMethod(method);
+        final int statusCode = callExecuteOnClient(method, client);
+        if (HttpStatusCodeHelper.isUnauthorized(statusCode)) {
+            loginAndRetryMethod(method, client, protocol);
+            final String methodHost = method.getURI().getHost();
+            if (HttpStatusCodeHelper.isUnauthorized(method.getStatusCode()) && hasMethodHostChanged(methodHost)) {
+                s_logger.debug("Got a second 401 while the host in the HTTP method has changed to " + methodHost);
+                setHost(methodHost);
+                loginAndRetryMethod(method, client, protocol);
+            }
         }
+    }
+
+    private static int callExecuteOnClient(final HttpMethodBase method, final HttpClient client) throws IOException, HttpException, URIException {
+        client.executeMethod(method);
+        final int statusCode = method.getStatusCode();
+        s_logger.debug("Executed " + method.getName() + " targeting URL " + method.getURI() + " and status code was " + statusCode);
+        return statusCode;
+    }
+
+    private void loginAndRetryMethod(final HttpMethodBase method, final HttpClient client, final String protocol) throws CloudstackRESTException, IOException, HttpException {
+        s_logger.debug("Will login and retry HTTP method");
+        method.releaseConnection();
+        login(protocol, client);
+        callExecuteOnClient(method, client);
+    }
+
+    private boolean hasMethodHostChanged(final String newHost) {
+        return !newHost.equals(host);
     }
 
     /**
@@ -119,6 +141,7 @@ public class RESTValidationStrategy {
         if (host == null || host.isEmpty() || user == null || user.isEmpty() || password == null || password.isEmpty()) {
             throw new CloudstackRESTException("Hostname/credentials are null or empty");
         }
+        s_logger.debug("Authenticating against REST server at " + host);
 
         try {
             url = new URL(protocol, host, loginUrl).toString();
@@ -132,7 +155,7 @@ public class RESTValidationStrategy {
         pm.addParameter("password", password);
 
         try {
-            client.executeMethod(pm);
+            callExecuteOnClient(pm, client);
         } catch (final HttpException e) {
             throw new CloudstackRESTException("REST Service API login failed ", e);
         } catch (final IOException e) {
@@ -153,5 +176,6 @@ public class RESTValidationStrategy {
         }
 
         // Success; the cookie required for login is kept in _client
+        s_logger.debug("Authentication against REST server at " + host + " successful");
     }
 }
