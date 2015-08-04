@@ -549,7 +549,7 @@ public class NiciraNvpApi {
         final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("attachment_gwsvc_uuid", gatewayServiceUuid);
-        params.put("attachment_vlan", "0");
+        params.put("attachment_vlan", Long.toString(vlanId));
         params.put("fields", "*");
 
         try {
