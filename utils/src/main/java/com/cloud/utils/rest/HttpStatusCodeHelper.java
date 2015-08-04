@@ -18,4 +18,20 @@ public class HttpStatusCodeHelper {
     public static boolean isNotOk(final int statusCode) {
         return !isOk(statusCode);
     }
+
+    public static boolean isCreated(final int statusCode) {
+        return statusCode == HttpStatus.SC_CREATED;
+    }
+
+    public static boolean isNotCreated(final int statusCode) {
+        return !isCreated(statusCode);
+    }
+
+    public static boolean isNoContent(final int statusCode) {
+        return statusCode == HttpStatus.SC_NO_CONTENT;
+    }
+
+    public static Boolean isNotNoContent(final int statusCode) {
+        return !isNoContent(statusCode);
+    }
 }
