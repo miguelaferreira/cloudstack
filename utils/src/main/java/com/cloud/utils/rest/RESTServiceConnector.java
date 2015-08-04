@@ -49,7 +49,6 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
@@ -182,7 +181,7 @@ public class RESTServiceConnector {
 
         executeMethod(pm);
 
-        if (pm.getStatusCode() != HttpStatus.SC_OK) {
+        if (HttpStatusCodeHelper.isNotOk(pm.getStatusCode())) {
             final String errorMessage = responseToErrorMessage(pm);
             pm.releaseConnection();
             s_logger.error("Failed to update object : " + errorMessage);
@@ -204,7 +203,7 @@ public class RESTServiceConnector {
 
         executeMethod(pm);
 
-        if (pm.getStatusCode() != HttpStatus.SC_CREATED) {
+        if (HttpStatusCodeHelper.isNotCreated(pm.getStatusCode())) {
             final String errorMessage = responseToErrorMessage(pm);
             pm.releaseConnection();
             s_logger.error("Failed to create object : " + errorMessage);
@@ -229,7 +228,7 @@ public class RESTServiceConnector {
 
         executeMethod(dm);
 
-        if (dm.getStatusCode() != HttpStatus.SC_NO_CONTENT) {
+        if (HttpStatusCodeHelper.isNotNoContent(dm.getStatusCode())) {
             final String errorMessage = responseToErrorMessage(dm);
             dm.releaseConnection();
             s_logger.error("Failed to delete object : " + errorMessage);
@@ -252,7 +251,7 @@ public class RESTServiceConnector {
 
         executeMethod(gm);
 
-        if (gm.getStatusCode() != HttpStatus.SC_OK) {
+        if (HttpStatusCodeHelper.isNotOk(gm.getStatusCode())) {
             final String errorMessage = responseToErrorMessage(gm);
             gm.releaseConnection();
             s_logger.error("Failed to retrieve object : " + errorMessage);

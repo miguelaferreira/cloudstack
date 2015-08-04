@@ -26,7 +26,6 @@ import java.net.URL;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Logger;
 
@@ -100,7 +99,7 @@ public class RESTValidationStrategy {
         }
 
         client.executeMethod(method);
-        if (method.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+        if (HttpStatusCodeHelper.isUnauthorized(method.getStatusCode())) {
             method.releaseConnection();
             // login and try again
             login(protocol, client);
@@ -142,7 +141,7 @@ public class RESTValidationStrategy {
             pm.releaseConnection();
         }
 
-        if (pm.getStatusCode() != HttpStatus.SC_OK) {
+        if (HttpStatusCodeHelper.isNotOk(pm.getStatusCode())) {
             s_logger.error("REST Service API login failed : " + pm.getStatusText());
             throw new CloudstackRESTException("REST Service API login failed " + pm.getStatusText());
         }
@@ -155,5 +154,4 @@ public class RESTValidationStrategy {
 
         // Success; the cookie required for login is kept in _client
     }
-
 }
