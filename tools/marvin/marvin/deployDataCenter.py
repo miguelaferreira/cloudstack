@@ -592,6 +592,18 @@ class DeployDataCenters(object):
                                     debug("==== AddF5 "
                                           "Successful=====")
                                 self.__addToCleanUp("F5LoadBalancer", ret.id)
+                        elif provider.name == "NiciraNvp":
+                            for device in provider.devices:
+                                cmd =  addNiciraNvpDevice.addNiciraNvpDeviceCmd()
+                                cmd.hostname = device.hostname
+                                cmd.username = device.username
+                                cmd.password = device.password
+                                cmd.transportzoneuuid = device.transportzoneuuid
+                                cmd.physicalnetworkid = phynetwrk.id
+                                ret = self.__apiClient.addNiciraNvpDevice(cmd)
+                                self.__tcRunLogger.\
+                                    debug("==== AddNiciraNvp Successful =====")
+                            self.__addToCleanUp("NiciraNvp", ret.id)
                         else:
                             raise InvalidParameterException(
                                 "Device %s doesn't match "
@@ -1133,7 +1145,7 @@ if __name__ == "__main__":
             print "\n===Deploy Failed==="
             tc_run_logger.debug("\n===Deploy Failed===");
             exit(1)
-            
+
 
     if options.remove and os.path.isfile(options.remove) and options.input:
         '''
