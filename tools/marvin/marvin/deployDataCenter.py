@@ -534,7 +534,7 @@ class DeployDataCenters(object):
                     netprov.physicalnetworkid = phynetwrk.id
                     result = self.__apiClient.addNetworkServiceProvider(netprov)
                     self.enableProvider(result.id)
-                elif provider.name in ['Netscaler', 'JuniperSRX', 'F5BigIp']:
+                elif provider.name in ['Netscaler', 'JuniperSRX', 'F5BigIp', 'NiciraNvp']:
                     netprov = addNetworkServiceProvider.\
                         addNetworkServiceProviderCmd()
                     netprov.name = provider.name
