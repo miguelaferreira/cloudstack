@@ -53,6 +53,7 @@ class TestNiciraContoller(cloudstackTestCase):
         #     - sourec nat (virtual router)
         cls.cleanup = []
 
+
     @classmethod
     def tearDownClass(cls):
         pass
@@ -60,6 +61,7 @@ class TestNiciraContoller(cloudstackTestCase):
         #     cleanup_resources(cls.apiclient, cls.cleanup)
         # except Exception as e:
         #     raise Exception("Warning: Exception during cleanup : %s" % e)
+
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -95,7 +97,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
-    def test_nicira(self):
+    def test_01_nicira(self):
         """
             Nicira clusters will redirect clients (in this case ACS) to the master node.
             This test assumes that a Nicira cluster is present and configured properly, and
