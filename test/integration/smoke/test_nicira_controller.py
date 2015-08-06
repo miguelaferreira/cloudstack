@@ -26,12 +26,10 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        testClient       = super(TestNiciraContoller, cls).getClsTestClient()
+        cls.testClient       = super(TestNiciraContoller, cls).getClsTestClient()
         cls.apiclient    = testClient.getApiClient()
         cls.services     = testClient.getParsedTestDataConfig()
         cls.niciraConfig = cls.services['niciraNvp']
-
-        cls.debug("Nicira config: %s " % cls.niciraConfig)
 
         cls.get_transport_zone_if_from_controller()
 
@@ -94,7 +92,11 @@ class TestNiciraContoller(cloudstackTestCase):
             If all is well, no matter what controller is specified in the Nicira Nvp device, status check
             should awyas succeed.
         """
-        zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+
+        self.debug("Nicira config: %s " % cls.niciraConfig)
+
+
+        zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         nicira_physical_network_name = None
         for physical_network in zone.physical_networks:
             for provider in physical_network.providers:
