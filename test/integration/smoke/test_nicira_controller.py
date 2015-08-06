@@ -17,7 +17,6 @@
 # under the License.
 
 import requests
-from marvin.cloudstackAPI import addNetworkServiceProvider
 from marvin.cloudstackTestCase import *
 from marvin.lib.base import *
 from marvin.lib.common import *
@@ -40,6 +39,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        pass
         # try:
         #     cleanup_resources(cls.apiclient, cls.cleanup)
         # except Exception as e:
