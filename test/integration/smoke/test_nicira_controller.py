@@ -44,6 +44,10 @@ class TestNiciraContoller(cloudstackTestCase):
         # except Exception as e:
         #     raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
 
     # def get_transport_zone_if_from_controller(cls):
     #     cls.niciraMaster = None
