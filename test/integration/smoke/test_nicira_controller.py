@@ -31,7 +31,7 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.services     = testClient.getParsedTestDataConfig()
         cls.niciraConfig = cls.services['niciraNvp']
 
-        self.debug("Nicira config: %s " % cls.niciraConfig)
+        print("Nicira config: %s " % cls.niciraConfig)
 
         cls.get_transport_zone_if_from_controller()
 
