@@ -18,6 +18,9 @@
 
 import requests
 from marvin.cloudstackAPI import addNetworkServiceProvider
+from marvin.cloudstackTestCase import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 class TestNiciraContoller(cloudstackTestCase):
 
@@ -73,7 +76,7 @@ class TestNiciraContoller(cloudstackTestCase):
             raise Exception('Did not find a Nicira controller that is cluster master in config')
 
 
-    @attr(tags = ["advanced", "smoke"], required_hardware="true")
+    @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_nicira_controler_redirect(self):
         """
             Nicira clusters will redirect clients (in this case ACS) to the master node.
