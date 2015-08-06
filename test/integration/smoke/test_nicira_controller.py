@@ -42,9 +42,10 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.testClient   = super(TestNiciraContoller, cls).getClsTestClient()
+        testClient   = super(TestNiciraContoller, cls).getClsTestClient()
         cls.apiclient    = testClient.getApiClient()
         cls.services     = testClient.getParsedTestDataConfig()
+        cls.zone      = get_zone(cls.apiclient, testClient.getZoneForTests())
         # cls.niciraConfig = cls.services['niciraNvp']
         # cls.get_transport_zone_if_from_controller()
         # create net offring
@@ -94,7 +95,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
-    def test_nicira_controler_redirect(self):
+    def test_nicira(self):
         """
             Nicira clusters will redirect clients (in this case ACS) to the master node.
             This test assumes that a Nicira cluster is present and configured properly, and
@@ -109,7 +110,7 @@ class TestNiciraContoller(cloudstackTestCase):
         """
         self.debug("Nicira config: %s " % cls.niciraConfig)
         raise Exception("I'm here")
-        # zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+
         # nicira_physical_network_name = None
         # for physical_network in zone.physical_networks:
         #     for provider in physical_network.providers:
