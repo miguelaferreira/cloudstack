@@ -28,6 +28,8 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.services     = testClient.getParsedTestDataConfig()
         cls.niciraConfig = cls.services['niciraNvp']
 
+        cls.get_transport_zone_if_from_controller()
+
         # create net offring
         #     - VirtualRouter (nicira)
         #     - sourec nat (virtual router)
@@ -41,7 +43,7 @@ class TestNiciraContoller(cloudstackTestCase):
         #     raise Exception("Warning: Exception during cleanup : %s" % e)
 
 
-    def get_transport_zone_if_from_controller(cls, controller, zone_name):
+    def get_transport_zone_if_from_controller(cls):
         cls.niciraMaster = None
         niciraCredentials = {'username': cls.niciraConfig['username'], 'password': cls.niciraConfig['password']}
         for niciraHost in cls.niciraConfig['hosts']:
