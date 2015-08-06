@@ -26,12 +26,12 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        testClient       = self.testClient.getApiClient()
+        testClient       = super(TestNiciraContoller, cls).getClsTestClient()
         cls.apiclient    = testClient.getApiClient()
         cls.services     = testClient.getParsedTestDataConfig()
         cls.niciraConfig = cls.services['niciraNvp']
 
-        print("Nicira config: %s " % cls.niciraConfig)
+        cls.debug("Nicira config: %s " % cls.niciraConfig)
 
         cls.get_transport_zone_if_from_controller()
 
