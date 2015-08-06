@@ -20,6 +20,7 @@ import requests
 from marvin.cloudstackTestCase import *
 from marvin.lib.base import *
 from marvin.lib.common import *
+from nose.plugins.attrib import attr
 
 class TestNiciraContoller(cloudstackTestCase):
 
@@ -57,10 +58,11 @@ class TestNiciraContoller(cloudstackTestCase):
             if statusCode == 401:
                 continue
             elif statusCode == 200:
+                self.debug("Nicira master controller is: %s " % niciraHost)
                 cls.niciraMaster = niciraHost
                 response = r2.json()
                 resultCount = response['result_count']
-                if resultCount == 0
+                if resultCount == 0:
                     raise Exception('Nicira controller did not return any Transport Zones')
                 elif resultCount > 1:
                     self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
@@ -104,12 +106,13 @@ class TestNiciraContoller(cloudstackTestCase):
 
         niciraSlave = None
         for niciraHost in cls.niciraConfig['hosts']:
-            if niciraHost != cls.niciraMaster
+            if niciraHost != cls.niciraMaster:
                 niciraSlave = niciraHost
 
         if niciraSlave == None:
             raise Exception('Cannot test controller redirect beacause there is no slave controller in config')
 
+        self.debug("Nicira slave controller is: %s " % niciraSlave)
         niciraDevice = NiciraNvp.add(cls.apiclient, cls.niciraConfig, physicalNetworkId,
                                hostname=niciraSlave, transportzoneid=csl.transportZoneUuid)
         cls.cleanup.append(niciraDevice)
