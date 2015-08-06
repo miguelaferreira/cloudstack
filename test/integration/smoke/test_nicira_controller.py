@@ -88,6 +88,7 @@ class TestNiciraContoller(cloudstackTestCase):
             should awyas succeed.
         """
         self.debug("Nicira config: %s " % cls.niciraConfig)
+        raise Exception("I'm here")
         # zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         # nicira_physical_network_name = None
         # for physical_network in zone.physical_networks:
