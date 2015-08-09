@@ -50,34 +50,35 @@ class TestNiciraContoller(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        get_transport_zone_if_from_controller()
         self.cleanup = []
 
-    # def get_transport_zone_if_from_controller(cls):
-    #     cls.niciraMaster = None
-    #     niciraCredentials = {'username': cls.niciraConfig['username'], 'password': cls.niciraConfig['password']}
-    #     for niciraHost in cls.niciraConfig['hosts']:
-    #         r1 = requests.post("https://%s/ws.v1/login" % niciraHost, niciraCredentials, verify=False)
-    #         r2 = requests.get("https://%s/ws.v1/transport-zone" % niciraHost, verify=False, cookies=r1.cookies)
-    #         statusCode = r2.status_code
-    #         if statusCode == 401:
-    #             continue
-    #         elif statusCode == 200:
-    #             listTransportZoneResponse = r2.json()
-    #             self.debug("Nicira master controller is: %s " % niciraHost)
-    #             cls.niciraMaster = niciraHost
-    #             response = r2.json()
-    #             resultCount = response['result_count']
-    #             if resultCount == 0:
-    #                 raise Exception('Nicira controller did not return any Transport Zones')
-    #             elif resultCount > 1:
-    #                 self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
-    #             transportZoneApiUrl = listTransportZoneResponse['results'][0]['_href']
-    #             r3 = requests.get("https://%s%s" % (niciraHost, transportZoneApiUrl), verify=False, cookies=r1.cookies)
-    #             csl.transportZoneUuid = r3.json()['uuid']
-    #         else:
-    #             raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % statusCode)
-    #     if cls.niciraMaster == None:
-    #         raise Exception('Did not find a Nicira controller that is cluster master in config')
+    def get_transport_zone_if_from_controller(cls):
+        cls.niciraMaster = None
+        niciraCredentials = {'username': cls.niciraConfig['username'], 'password': cls.niciraConfig['password']}
+        for niciraHost in cls.niciraConfig['hosts']:
+            r1 = requests.post("https://%s/ws.v1/login" % niciraHost, niciraCredentials, verify=False)
+            r2 = requests.get("https://%s/ws.v1/transport-zone" % niciraHost, verify=False, cookies=r1.cookies)
+            statusCode = r2.status_code
+            if statusCode == 401:
+                continue
+            elif statusCode == 200:
+                listTransportZoneResponse = r2.json()
+                self.debug("Nicira master controller is: %s " % niciraHost)
+                cls.niciraMaster = niciraHost
+                response = r2.json()
+                resultCount = response['result_count']
+                if resultCount == 0:
+                    raise Exception('Nicira controller did not return any Transport Zones')
+                elif resultCount > 1:
+                    self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
+                transportZoneApiUrl = listTransportZoneResponse['results'][0]['_href']
+                r3 = requests.get("https://%s%s" % (niciraHost, transportZoneApiUrl), verify=False, cookies=r1.cookies)
+                csl.transportZoneUuid = r3.json()['uuid']
+            else:
+                raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % statusCode)
+        if cls.niciraMaster == None:
+            raise Exception('Did not find a Nicira controller that is cluster master in config')
 
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
@@ -95,7 +96,7 @@ class TestNiciraContoller(cloudstackTestCase):
             should awyas succeed.
         """
         nicira_physical_network_name = None
-        for physical_network in zone.physical_networks:
+        for physical_network in sefl.zone.physical_networks:
             for provider in physical_network.providers:
                 if provider.name == 'NiciraNvp':
                     nicira_physical_network_name = physical_network.name
