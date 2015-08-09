@@ -31,8 +31,8 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.apiclient    = testClient.getApiClient()
         cls.services     = testClient.getParsedTestDataConfig()
         cls.zone      = get_zone(cls.apiclient, testClient.getZoneForTests())
-        # cls.niciraConfig = cls.services['niciraNvp']
-        # cls.get_transport_zone_if_from_controller()
+        cls.niciraConfig = cls.services['niciraNvp']
+        cls.get_transport_zone_from_controller()
         # create net offring
         #     - VirtualRouter (nicira)
         #     - sourec nat (virtual router)
@@ -50,10 +50,9 @@ class TestNiciraContoller(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        get_transport_zone_if_from_controller()
         self.cleanup = []
 
-    def get_transport_zone_if_from_controller(cls):
+    def get_transport_zone_from_controller(cls):
         cls.niciraMaster = None
         niciraCredentials = {'username': cls.niciraConfig['username'], 'password': cls.niciraConfig['password']}
         for niciraHost in cls.niciraConfig['hosts']:
