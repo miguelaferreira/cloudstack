@@ -22,6 +22,7 @@ from marvin.lib.utils import cleanup_resources
 from marvin.lib.common import get_zone
 from nose.plugins.attrib import attr
 import time
+
 class TestNiciraContoller(cloudstackTestCase):
 
     @classmethod
@@ -94,7 +95,7 @@ class TestNiciraContoller(cloudstackTestCase):
             should awyas succeed.
         """
         self.debug("Nicira config: %s " % cls.niciraConfig)
-        raise Exception("I'm here")
+        # raise Exception("I'm here")
 
         # nicira_physical_network_name = None
         # for physical_network in zone.physical_networks:
