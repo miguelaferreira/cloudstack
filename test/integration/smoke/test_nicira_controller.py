@@ -18,25 +18,9 @@
 
 import requests
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (recoverVirtualMachine,
-                                  destroyVirtualMachine,
-                                  attachIso,
-                                  detachIso)
-from marvin.lib.utils import (cleanup_resources,
-                              validateList)
-from marvin.lib.base import (Account,
-                             ServiceOffering,
-                             VirtualMachine,
-                             Host,
-                             Iso,
-                             Router,
-                             Configurations)
-from marvin.lib.common import (get_domain,
-                                get_zone,
-                                get_template)
-from marvin.codes import FAILED, PASS
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.common import get_zone
 from nose.plugins.attrib import attr
-#Import System modules
 import time
 class TestNiciraContoller(cloudstackTestCase):
 
@@ -56,11 +40,10 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        pass
-        # try:
-        #     cleanup_resources(cls.apiclient, cls.cleanup)
-        # except Exception as e:
-        #     raise Exception("Warning: Exception during cleanup : %s" % e)
+        try:
+            cleanup_resources(cls.apiclient, cls.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
 
     def setUp(self):
@@ -131,4 +114,40 @@ class TestNiciraContoller(cloudstackTestCase):
         # niciraDevice = NiciraNvp.add(cls.apiclient, cls.niciraConfig, physicalNetworkId,
         #                        hostname=niciraSlave, transportzoneid=csl.transportZoneUuid)
         # cls.cleanup.append(niciraDevice)
+
+    def determine_master():
+        niciraCredentials = {'username': 'admin', 'password': 'admin'}
+        hosts = ['nsxcon1', 'nsxcon2']
+        for niciraHost in hosts:
+            r1 = requests.post("https://%s/ws.v1/login" % niciraHost, niciraCredentials, verify=False)
+            r2 = requests.get("https://%s/ws.v1/transport-zone" % niciraHost, verify=False, cookies=r1.cookies)
+            statusCode = r2.status_code
+            if statusCode == 401:
+                continue
+            elif statusCode == 200:
+                listTransportZoneResponse = r2.json()
+                response = r2.json()
+                resultCount = response['result_count']
+                if resultCount == 0:
+                    raise Exception('Nicira controller did not return any Transport Zones')
+                elif resultCount > 1:
+                    print "Nicira controller returned %s Transport Zones, picking first one" % resultCount
+                transportZoneApiUrl = listTransportZoneResponse['results'][0]['_href']
+                r3 = requests.get("https://%s%s" % (niciraHost, transportZoneApiUrl), verify=False, cookies=r1.cookies)
+                return (niciraHost, r3.json()['uuid'])
+
+    #             listTransportZoneResponse = r2.json()
+    #             self.debug("Nicira master controller is: %s " % niciraHost)
+    #             cls.niciraMaster = niciraHost
+    #             response = r2.json()
+    #             resultCount = response['result_count']
+    #             if resultCount == 0:
+    #                 raise Exception('Nicira controller did not return any Transport Zones')
+    #             elif resultCount > 1:
+    #                 self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
+    #             transportZoneApiUrl = listTransportZoneResponse['results'][0]['_href']
+    #             r3 = requests.get("https://%s%s" % (niciraHost, transportZoneApiUrl), verify=False, cookies=r1.cookies)
+    #             csl.transportZoneUuid = r3.json()['uuid']
+    #         else:
+    #             raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % statusCode)
 
