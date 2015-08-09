@@ -80,7 +80,7 @@ class TestNiciraContoller(cloudstackTestCase):
     #         raise Exception('Did not find a Nicira controller that is cluster master in config')
 
 
-    @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
+    @attr(tags = [], required_hardware="true")
     def test_01_nicira(self):
         """
             Nicira clusters will redirect clients (in this case ACS) to the master node.
