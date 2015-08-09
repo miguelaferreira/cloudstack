@@ -94,27 +94,24 @@ class TestNiciraContoller(cloudstackTestCase):
             If all is well, no matter what controller is specified in the Nicira Nvp device, status check
             should awyas succeed.
         """
-        self.debug("Nicira config: %s " % cls.niciraConfig)
-        # raise Exception("I'm here")
-
-        # nicira_physical_network_name = None
-        # for physical_network in zone.physical_networks:
-        #     for provider in physical_network.providers:
-        #         if provider.name == 'NiciraNvp':
-        #             nicira_physical_network_name = physical_network.name
-        # if nicira_physical_network_name is None:
-        #     raise Exception('Did not find a Nicira enabled physical network in configuration')
-        # physicalNetworkId = PhysicalNetwork.list(cls.apiclient, {'name': nicira_physical_network_name})[0].id
-        # niciraSlave = None
-        # for niciraHost in cls.niciraConfig['hosts']:
-        #     if niciraHost != cls.niciraMaster:
-        #         niciraSlave = niciraHost
-        # if niciraSlave == None:
-        #     raise Exception('Cannot test controller redirect beacause there is no slave controller in config')
-        # self.debug("Nicira slave controller is: %s " % niciraSlave)
-        # niciraDevice = NiciraNvp.add(cls.apiclient, cls.niciraConfig, physicalNetworkId,
-        #                        hostname=niciraSlave, transportzoneid=csl.transportZoneUuid)
-        # cls.cleanup.append(niciraDevice)
+        nicira_physical_network_name = None
+        for physical_network in zone.physical_networks:
+            for provider in physical_network.providers:
+                if provider.name == 'NiciraNvp':
+                    nicira_physical_network_name = physical_network.name
+        if nicira_physical_network_name is None:
+            raise Exception('Did not find a Nicira enabled physical network in configuration')
+        physicalNetworkId = PhysicalNetwork.list(cls.apiclient, {'name': nicira_physical_network_name})[0].id
+        niciraSlave = None
+        for niciraHost in self.niciraConfig['hosts']:
+            if niciraHost != self.niciraMaster:
+                niciraSlave = niciraHost
+        if niciraSlave == None:
+            raise Exception('Cannot test controller redirect beacause there is no slave controller in config')
+        self.debug("Nicira slave controller is: %s " % niciraSlave)
+        niciraDevice = NiciraNvp.add(self.apiclient, self.niciraConfig, physicalNetworkId,
+                               hostname=niciraSlave, transportzoneid=self.transportZoneUuid)
+        self.cleanup.append(niciraDevice)
 
     def determine_master():
         niciraCredentials = {'username': 'admin', 'password': 'admin'}
