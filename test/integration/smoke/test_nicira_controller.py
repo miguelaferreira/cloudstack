@@ -36,7 +36,6 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.api_client    = test_client.getApiClient()
         cls.zone          = get_zone(cls.api_client, test_client.getZoneForTests())
         cls.nicira_config = cls.config.niciraNvp
-        print "DEBUG:: >> nicira_config = %s" % cls.nicira_config
 
         cls.nicira_master_controller = cls.determine_master_controller(
             cls.nicira_config.hosts,
@@ -77,12 +76,7 @@ class TestNiciraContoller(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
 
-    def setUp(self):
-        self.api_client = self.test_client.getApiClient()
-        self.db_client  = self.test_client.getDbConnection()
-        self.cleanup = []
-
-
+    @classmethod
     def determine_master_controller(cls, hosts, credentials):
         for host in hosts:
             r1 = requests.post("https://%s/ws.v1/login" % host, credentials, verify=False)
@@ -94,13 +88,8 @@ class TestNiciraContoller(cloudstackTestCase):
                 return host
         raise Exception("None of the supplied hosts (%s) is a Nicira controller" % hosts)
 
-    def determine_slave_conroller(self, hosts, master_controller):
-        slaves = [ s for s in hosts if s != master_controller ]
-        if len(slaves) > 0:
-            return slaves[0]
-        else:
-            raise Exception("None of the supplied hosts (%s) is a Nicira slave" % hosts)
 
+    @classmethod
     def get_transport_zone_from_controller(cls, controller_host, credentials):
         r1 = requests.post("https://%s/ws.v1/login" % controller_host, credentials, verify=False)
         r2 = requests.get("https://%s/ws.v1/transport-zone" % controller_host, verify=False, cookies=r1.cookies)
@@ -122,6 +111,8 @@ class TestNiciraContoller(cloudstackTestCase):
         else:
             raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % status_code)
 
+
+    @classmethod
     def get_nicira_enabled_physical_network_id(cls, physical_networks):
         nicira_physical_network_name = None
         for physical_network in physical_networks:
@@ -131,6 +122,21 @@ class TestNiciraContoller(cloudstackTestCase):
         if nicira_physical_network_name is None:
             raise Exception('Did not find a Nicira enabled physical network in configuration')
         return PhysicalNetwork.list(cls.api_client, {'name': nicira_physical_network_name})[0].id
+
+
+    def setUp(self):
+        self.api_client = self.test_client.getApiClient()
+        self.db_client  = self.test_client.getDbConnection()
+        self.cleanup = []
+
+
+    def determine_slave_conroller(self, hosts, master_controller):
+        slaves = [ s for s in hosts if s != master_controller ]
+        if len(slaves) > 0:
+            return slaves[0]
+        else:
+            raise Exception("None of the supplied hosts (%s) is a Nicira slave" % hosts)
+
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_01_nicira(self):
