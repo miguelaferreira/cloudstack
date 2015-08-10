@@ -19,6 +19,7 @@
 import requests
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (PhysicalNetwork, NetworkOffering)
 from marvin.lib.common import get_zone
 from nose.plugins.attrib import attr
 import time
@@ -27,16 +28,41 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        testClient   = super(TestNiciraContoller, cls).getClsTestClient()
-        cls.apiclient    = testClient.getApiClient()
-        cls.services     = testClient.getParsedTestDataConfig()
-        cls.zone         = get_zone(cls.apiclient, testClient.getZoneForTests())
-        cls.niciraConfig = cls.services['niciraNvp']
-        cls.get_transport_zone_from_controller()
-        # create net offring
-        #     - VirtualRouter (nicira)
-        #     - sourec nat (virtual router)
-        cls.cleanup = []
+        test_client   = super(TestNiciraContoller, cls).getClsTestClient()
+
+        cls.api_client    = test_client.getApiClient()
+        cls.config        = test_client.getParsedTestDataConfig()
+        cls.zone          = get_zone(cls.api_client, test_client.getZoneForTests())
+        cls.nicira_config = cls.config['niciraNvp']
+
+        cls.nicira_master_controller = cls.determine_master_controller(
+            cls.nicira_config.hosts,
+            cls.nicira_config.credentials
+        )
+
+        cls.transport_zone_uuid = cls.get_transport_zone_from_controller(
+            cls.nicira_master_controller,
+            cls.nicira_config.credentials
+        )
+
+        cls.network_offerring_services = {
+            "name": 'NiciraEnabledNetwork',
+            "displaytext": 'NiciraEnabledNetwork',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'SourceNat,VirtualRouter',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "serviceProviderList": {
+                    "SourceNat": 'VirtualRouter',
+                    "VirtualRouter": 'NiciraNvp'
+        }
+
+        cls.network_offering = NetworkOffering.create(cls.api_client, cls.network_offerring_services)
+        cls.network_offering.update(cls.api_client, state='Enabled')
+
+        cls.cleanup = [
+            cls.network_offering
+        ]
 
 
     @classmethod
@@ -48,37 +74,59 @@ class TestNiciraContoller(cloudstackTestCase):
 
 
     def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
+        self.api_client = self.test_client.getApiClient()
+        self.db_client  = self.test_client.getDbConnection()
         self.cleanup = []
 
-    def get_transport_zone_from_controller(cls):
-        cls.niciraMaster = None
-        niciraCredentials = {'username': cls.niciraConfig['username'], 'password': cls.niciraConfig['password']}
-        for niciraHost in cls.niciraConfig['hosts']:
-            r1 = requests.post("https://%s/ws.v1/login" % niciraHost, niciraCredentials, verify=False)
-            r2 = requests.get("https://%s/ws.v1/transport-zone" % niciraHost, verify=False, cookies=r1.cookies)
-            statusCode = r2.status_code
-            if statusCode == 401:
-                continue
-            elif statusCode == 200:
-                listTransportZoneResponse = r2.json()
-                self.debug("Nicira master controller is: %s " % niciraHost)
-                cls.niciraMaster = niciraHost
-                response = r2.json()
-                resultCount = response['result_count']
-                if resultCount == 0:
-                    raise Exception('Nicira controller did not return any Transport Zones')
-                elif resultCount > 1:
-                    self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
-                transportZoneApiUrl = listTransportZoneResponse['results'][0]['_href']
-                r3 = requests.get("https://%s%s" % (niciraHost, transportZoneApiUrl), verify=False, cookies=r1.cookies)
-                csl.transportZoneUuid = r3.json()['uuid']
-            else:
-                raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % statusCode)
-        if cls.niciraMaster == None:
-            raise Exception('Did not find a Nicira controller that is cluster master in config')
 
+    def determine_master_controller(cls, hosts, credentials):
+        for host in hosts:
+            r1 = requests.post("https://%s/ws.v1/login" % host, credentials, verify=False)
+            r2 = requests.get("https://%s/ws.v1/control-cluster/status" % host, verify=False, cookies=r1.cookies)
+            status_code = r2.status_code
+            if status_code == 401:
+                continue
+            elif status_code == 200:
+                return host
+        raise Exception("None of the supplied hosts (%s) is a Nicira controller" % hosts)
+
+    def determine_slave_conroller(self, hosts, master_controller):
+        slaves = [ s for s in hosts if s != master_controller ]
+        if len(slaves) > 0:
+            return slaves[0]
+        else:
+            raise Exception("None of the supplied hosts (%s) is a Nicira slave" % hosts)
+
+    def get_transport_zone_from_controller(cls, controller_host, credentials):
+        r1 = requests.post("https://%s/ws.v1/login" % controller_host, credentials, verify=False)
+        r2 = requests.get("https://%s/ws.v1/transport-zone" % controller_host, verify=False, cookies=r1.cookies)
+        status_code = r2.status_code
+        if status_code == 200:
+            list_transport_zone_response = r2.json()
+            result_count = list_transport_zone_response['result_count']
+            if result_count == 0:
+                raise Exception('Nicira controller did not return any Transport Zones')
+            elif result_count > 1:
+                self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
+            transport_zone_api_url = list_transport_zone_response['results'][0]['_href']
+            r3 = requests.get(
+                "https://%s%s" % (controller_host, transport_zone_api_url),
+                verify=False,
+                cookies=r1.cookies
+            )
+            return r3.json()['uuid']
+        else:
+            raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % status_code)
+
+    def get_nicira_enabled_physical_network_id(cls, physical_networks):
+        nicira_physical_network_name = None
+        for physical_network in physical_networks:
+            for provider in physical_network.providers:
+                if provider.name == 'NiciraNvp':
+                    nicira_physical_network_name = physical_network.name
+        if nicira_physical_network_name is None:
+            raise Exception('Did not find a Nicira enabled physical network in configuration')
+        return PhysicalNetwork.list(cls.api_client, {'name': nicira_physical_network_name})[0].id
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_01_nicira(self):
@@ -94,58 +142,15 @@ class TestNiciraContoller(cloudstackTestCase):
             If all is well, no matter what controller is specified in the Nicira Nvp device, status check
             should awyas succeed.
         """
-        nicira_physical_network_name = None
-        for physical_network in sefl.zone.physical_networks:
-            for provider in physical_network.providers:
-                if provider.name == 'NiciraNvp':
-                    nicira_physical_network_name = physical_network.name
-        if nicira_physical_network_name is None:
-            raise Exception('Did not find a Nicira enabled physical network in configuration')
-        physicalNetworkId = PhysicalNetwork.list(cls.apiclient, {'name': nicira_physical_network_name})[0].id
-        niciraSlave = None
-        for niciraHost in self.niciraConfig['hosts']:
-            if niciraHost != self.niciraMaster:
-                niciraSlave = niciraHost
-        if niciraSlave == None:
-            raise Exception('Cannot test controller redirect beacause there is no slave controller in config')
-        self.debug("Nicira slave controller is: %s " % niciraSlave)
-        niciraDevice = NiciraNvp.add(self.apiclient, self.niciraConfig, physicalNetworkId,
-                               hostname=niciraSlave, transportzoneid=self.transportZoneUuid)
-        self.cleanup.append(niciraDevice)
+        physical_network_id = self.get_nicira_enabled_physical_network_id(sefl.zone.physical_networks)
 
-    def determine_master():
-        niciraCredentials = {'username': 'admin', 'password': 'admin'}
-        hosts = ['nsxcon1', 'nsxcon2']
-        for niciraHost in hosts:
-            r1 = requests.post("https://%s/ws.v1/login" % niciraHost, niciraCredentials, verify=False)
-            r2 = requests.get("https://%s/ws.v1/transport-zone" % niciraHost, verify=False, cookies=r1.cookies)
-            statusCode = r2.status_code
-            if statusCode == 401:
-                continue
-            elif statusCode == 200:
-                listTransportZoneResponse = r2.json()
-                response = r2.json()
-                resultCount = response['result_count']
-                if resultCount == 0:
-                    raise Exception('Nicira controller did not return any Transport Zones')
-                elif resultCount > 1:
-                    print "Nicira controller returned %s Transport Zones, picking first one" % resultCount
-                transportZoneApiUrl = listTransportZoneResponse['results'][0]['_href']
-                r3 = requests.get("https://%s%s" % (niciraHost, transportZoneApiUrl), verify=False, cookies=r1.cookies)
-                return (niciraHost, r3.json()['uuid'])
+        nicira_slave = self.determine_slave_conroller(cls.nicira_config.hosts, cls.nicira_master_controller)
+        self.debug("Nicira slave controller is: %s " % nicira_slave)
 
-    #             listTransportZoneResponse = r2.json()
-    #             self.debug("Nicira master controller is: %s " % niciraHost)
-    #             cls.niciraMaster = niciraHost
-    #             response = r2.json()
-    #             resultCount = response['result_count']
-    #             if resultCount == 0:
-    #                 raise Exception('Nicira controller did not return any Transport Zones')
-    #             elif resultCount > 1:
-    #                 self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
-    #             transportZoneApiUrl = listTransportZoneResponse['results'][0]['_href']
-    #             r3 = requests.get("https://%s%s" % (niciraHost, transportZoneApiUrl), verify=False, cookies=r1.cookies)
-    #             csl.transportZoneUuid = r3.json()['uuid']
-    #         else:
-    #             raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % statusCode)
-
+        nicira_device = NiciraNvp.add(
+            self.api_client,
+            self.nicira_config,
+            physical_network_id,
+            hostname=nicira_slave,
+            transportzoneid=self.transport_zone_uuid)
+        self.cleanup.append(nicira_device)
