@@ -3848,6 +3848,7 @@ class NiciraNvp:
         else:
             cmd.transportzoneuuid = services['transportZoneUuid']
 
+        print "NiciraNvp attribtues = %s" % apiclient.addNiciraNvpDevice(cmd).__dict__
         return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
 
     @classmethod
