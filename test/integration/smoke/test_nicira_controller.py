@@ -82,13 +82,6 @@ class TestNiciraContoller(cloudstackTestCase):
             raise Exception("Warning: Exception during class cleanup : %s" % e)
 
 
-    def tearDown(self):
-        try:
-            cleanup_resources(self.api_client, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during test cleanup : %s" % e)
-
-
     @classmethod
     def determine_master_controller(cls, hosts, credentials):
         for host in hosts:
@@ -171,4 +164,4 @@ class TestNiciraContoller(cloudstackTestCase):
             username=self.nicir_credentials['username'],
             password=self.nicir_credentials['password'],
             transportzoneuuid=self.transport_zone_uuid)
-        # self.cleanup.append(nicira_device)
+        self.cleanup.append(nicira_device)
