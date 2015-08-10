@@ -76,9 +76,16 @@ class TestNiciraContoller(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
+            cleanup_resources(cls.api_client, cls.cleanup)
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+            raise Exception("Warning: Exception during class cleanup : %s" % e)
+
+
+    def tearDown(self):
+        try:
+            cleanup_resources(seld.api_client, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during test cleanup : %s" % e)
 
 
     @classmethod
@@ -129,12 +136,6 @@ class TestNiciraContoller(cloudstackTestCase):
         return PhysicalNetwork.list(cls.api_client, {'name': nicira_physical_network_name})[0].id
 
 
-    def setUp(self):
-        self.api_client = self.test_client.getApiClient()
-        self.db_client  = self.test_client.getDbConnection()
-        self.cleanup = []
-
-
     def determine_slave_conroller(self, hosts, master_controller):
         slaves = [ s for s in hosts if s != master_controller ]
         if len(slaves) > 0:
@@ -159,7 +160,7 @@ class TestNiciraContoller(cloudstackTestCase):
         """
         physical_network_id = self.get_nicira_enabled_physical_network_id(sefl.zone.physical_networks)
 
-        nicira_slave = self.determine_slave_conroller(cls.nicira_hosts, cls.nicira_master_controller)
+        nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
         self.debug("Nicira slave controller is: %s " % nicira_slave)
 
         nicira_device = NiciraNvp.add(
