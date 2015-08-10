@@ -20,7 +20,6 @@ import requests
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (PhysicalNetwork, NetworkOffering)
-from marvin.lib.common import get_zone
 from nose.plugins.attrib import attr
 import time
 
@@ -34,8 +33,9 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.config     = test_case.getClsConfig()
         cls.api_client = test_client.getApiClient()
 
-        cls.zone          = get_zone(cls.api_client, test_client.getZoneForTests())
-        cls.nicira_hosts  = cls.config.niciraNvp.hosts
+        cls.pysical_networks = cls.config.zones[0].pysical_networks
+        print "DEBUG:: pysical_networks = %s" % cls.pysical_networks
+        cls.nicira_hosts     = cls.config.niciraNvp.hosts
 
         cls.nicir_credentials = {
             'username': 'admin',
@@ -157,8 +157,7 @@ class TestNiciraContoller(cloudstackTestCase):
             If all is well, no matter what controller is specified in the Nicira Nvp device, status check
             should awyas succeed.
         """
-        print "DEBUG:: >> zone = %s" % self.zone
-        physical_network_id = self.get_nicira_enabled_physical_network_id(self.zone.physical_networks)
+        physical_network_id = self.get_nicira_enabled_physical_network_id(self.physical_networks)
 
         nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
         self.debug("Nicira slave controller is: %s " % nicira_slave)
