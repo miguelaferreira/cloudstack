@@ -3848,8 +3848,11 @@ class NiciraNvp:
         else:
             cmd.transportzoneuuid = services['transportZoneUuid']
 
-        print "NiciraNvp attribtues = %s" % apiclient.addNiciraNvpDevice(cmd).__dict__
-        return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
+        obj = NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
+        print "NiciraNvp attribtues = %s" % obj.__dict__
+        print "NiciraNvp nvpdeviceid  = %s" % obj.nvpdeviceid
+
+        return obj
 
     @classmethod
     def delete(self, apiclient):
