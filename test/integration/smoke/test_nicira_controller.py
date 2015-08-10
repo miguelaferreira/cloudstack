@@ -34,23 +34,9 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.api_client = test_client.getApiClient()
 
         cls.physical_networks = cls.config.zones[0].physical_networks
-        print "DEBUG:: physical_networks = %s" % cls.physical_networks
         cls.nicira_hosts     = cls.config.niciraNvp.hosts
 
-        cls.nicir_credentials = {
-            'username': 'admin',
-            'password': 'admin'
-        }
-
-        cls.nicira_master_controller = cls.determine_master_controller(
-            cls.nicira_hosts,
-            cls.nicir_credentials
-        )
-
-        cls.transport_zone_uuid = cls.get_transport_zone_from_controller(
-            cls.nicira_master_controller,
-            cls.nicir_credentials
-        )
+        cls.physical_network_id = cls.get_nicira_enabled_physical_network_id(cls.physical_networks)
 
         cls.network_offerring_services = {
             'name':              'NiciraEnabledNetwork',
@@ -67,6 +53,21 @@ class TestNiciraContoller(cloudstackTestCase):
 
         cls.network_offering = NetworkOffering.create(cls.api_client, cls.network_offerring_services)
         cls.network_offering.update(cls.api_client, state='Enabled')
+
+        cls.nicir_credentials = {
+            'username': 'admin',
+            'password': 'admin'
+        }
+
+        cls.nicira_master_controller = cls.determine_master_controller(
+            cls.nicira_hosts,
+            cls.nicir_credentials
+        )
+
+        cls.transport_zone_uuid = cls.get_transport_zone_from_controller(
+            cls.nicira_master_controller,
+            cls.nicir_credentials
+        )
 
         cls.cleanup = [
             cls.network_offering
@@ -124,7 +125,8 @@ class TestNiciraContoller(cloudstackTestCase):
             raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % status_code)
 
 
-    def get_nicira_enabled_physical_network_id(self, physical_networks):
+    @classmethod
+    def get_nicira_enabled_physical_network_id(cls, physical_networks):
         nicira_physical_network_name = None
         for physical_network in physical_networks:
             for provider in physical_network.providers:
@@ -157,8 +159,6 @@ class TestNiciraContoller(cloudstackTestCase):
             If all is well, no matter what controller is specified in the Nicira Nvp device, status check
             should awyas succeed.
         """
-        physical_network_id = self.get_nicira_enabled_physical_network_id(self.physical_networks)
-
         nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
         self.debug("Nicira slave controller is: %s " % nicira_slave)
 
