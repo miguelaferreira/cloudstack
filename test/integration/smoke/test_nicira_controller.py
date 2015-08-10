@@ -28,10 +28,12 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        test_client   = super(TestNiciraContoller, cls).getClsTestClient()
+        test_case = super(TestNiciraContoller, cls)
+
+        test_client = test_case.getClsTestClient()
+        cls.config  = test_case.getClsConfig()
 
         cls.api_client    = test_client.getApiClient()
-        cls.config        = test_client.getParsedConfig()
         cls.zone          = get_zone(cls.api_client, test_client.getZoneForTests())
         print "DEBUG:: >> config = %s" % cls.config
         cls.nicira_config = cls.config['niciraNvp']
