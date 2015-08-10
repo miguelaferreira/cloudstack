@@ -158,7 +158,7 @@ class TestNiciraContoller(cloudstackTestCase):
             If all is well, no matter what controller is specified in the Nicira Nvp device, status check
             should awyas succeed.
         """
-        physical_network_id = self.get_nicira_enabled_physical_network_id(sefl.zone.physical_networks)
+        physical_network_id = self.get_nicira_enabled_physical_network_id(self.zone.physical_networks)
 
         nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
         self.debug("Nicira slave controller is: %s " % nicira_slave)
