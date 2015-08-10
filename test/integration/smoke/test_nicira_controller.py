@@ -42,7 +42,6 @@ class TestNiciraContoller(cloudstackTestCase):
             'password': 'admin'
         }
 
-        print "DEBUG:: hosts = %s" % cls.nicira_config.hosts
         cls.nicira_master_controller = cls.determine_master_controller(
             cls.nicira_hosts,
             cls.nicir_credentials
