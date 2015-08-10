@@ -166,7 +166,7 @@ class TestNiciraContoller(cloudstackTestCase):
         nicira_device = NiciraNvp.add(
             self.api_client,
             None,
-            physical_network_id,
+            self.physical_network_id,
             hostname=nicira_slave,
             username=self.nicir_credentials['username'],
             password=self.nicir_credentials['password'],
