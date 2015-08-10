@@ -3853,7 +3853,7 @@ class NiciraNvp:
     def delete(self, apiclient):
         cmd = deleteNiciraNvpDevice.deleteNiciraNvpDeviceCmd()
         cmd.nvpdeviceid = self.nvpdeviceid
-        apiclient.deleteNiciraNvpDeviceCmd(cmd)
+        apiclient.deleteNiciraNvpDevice(cmd)
         return
 
     @classmethod
