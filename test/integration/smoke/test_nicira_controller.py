@@ -135,7 +135,7 @@ class TestNiciraContoller(cloudstackTestCase):
         if nicira_physical_network_name is None:
             raise Exception('Did not find a Nicira enabled physical network in configuration')
         print "DEBUG:: >> nicira_physical_network_name = %s" % nicira_physical_network_name
-        return PhysicalNetwork.list(cls.api_client, name=nicira_physical_network_name})[0].id
+        return PhysicalNetwork.list(cls.api_client, name=nicira_physical_network_name)[0].id
 
 
     def determine_slave_conroller(self, hosts, master_controller):
