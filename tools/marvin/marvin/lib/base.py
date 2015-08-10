@@ -3825,7 +3825,7 @@ class NiciraNvp:
 
     @classmethod
     def add(cls, apiclient, services, physicalnetworkid,
-            hostname=None, username=None, password=None, transportzoneid=None):
+            hostname=None, username=None, password=None, transportzoneuuid=None):
         cmd = addNiciraNvpDevice.addNiciraNvpDeviceCmd()
         cmd.physicalnetworkid = physicalnetworkid
         if hostname:
@@ -3843,10 +3843,10 @@ class NiciraNvp:
         else:
             cmd.password = services['password']
 
-        if transportzoneid:
-            cmd.transportzoneid = transportzoneid
+        if transportzoneuuid:
+            cmd.transportzoneuuid = transportzoneuuid
         else:
-            cmd.transportzoneid = services['transportZoneId']
+            cmd.transportzoneuuid = services['transportZoneUuid']
 
         return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
 
