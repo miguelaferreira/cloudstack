@@ -3824,8 +3824,8 @@ class NiciraNvp:
         self.__dict__.update(items)
 
     @classmethod
-    def add(cls, apiclient, services, physicalnetworkid, hostname=None
-            username=None, password=None, transportzoneid=None):
+    def add(cls, apiclient, services, physicalnetworkid,
+            hostname=None, username=None, password=None, transportzoneid=None):
         cmd = addNiciraNvpDevice.addNiciraNvpDeviceCmd()
         cmd.physicalnetworkid = physicalnetworkid
         if hostname:
