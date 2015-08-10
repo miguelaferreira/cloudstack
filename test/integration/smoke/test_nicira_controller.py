@@ -19,7 +19,7 @@
 import requests
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import cleanup_resources
-from marvin.lib.base import (PhysicalNetwork, NetworkOffering)
+from marvin.lib.base import (PhysicalNetwork, NetworkOffering, NiciraNvp)
 from nose.plugins.attrib import attr
 import time
 
