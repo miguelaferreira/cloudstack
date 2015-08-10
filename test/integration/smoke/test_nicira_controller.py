@@ -169,6 +169,6 @@ class TestNiciraContoller(cloudstackTestCase):
             physical_network_id,
             hostname=nicira_slave,
             username=self.nicir_credentials['username'],
-            password=self.nicir_credentials['password']
+            password=self.nicir_credentials['password'],
             transportzoneid=self.transport_zone_uuid)
         # self.cleanup.append(nicira_device)
