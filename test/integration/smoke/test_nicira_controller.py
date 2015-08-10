@@ -83,7 +83,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(seld.api_client, self.cleanup)
+            cleanup_resources(self.api_client, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during test cleanup : %s" % e)
 
