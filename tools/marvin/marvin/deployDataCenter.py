@@ -592,7 +592,7 @@ class DeployDataCenters(object):
                                     debug("==== AddF5 "
                                           "Successful=====")
                                 self.__addToCleanUp("F5LoadBalancer", ret.id)
-                        elif provider.name == "NiciraNvp":
+                        elif provider.name == 'NiciraNvp':
                             for device in provider.devices:
                                 cmd =  addNiciraNvpDevice.addNiciraNvpDeviceCmd()
                                 cmd.hostname = device.hostname

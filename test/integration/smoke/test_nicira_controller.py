@@ -30,7 +30,7 @@ class TestNiciraContoller(cloudstackTestCase):
         testClient   = super(TestNiciraContoller, cls).getClsTestClient()
         cls.apiclient    = testClient.getApiClient()
         cls.services     = testClient.getParsedTestDataConfig()
-        cls.zone      = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.zone         = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.niciraConfig = cls.services['niciraNvp']
         cls.get_transport_zone_from_controller()
         # create net offring
