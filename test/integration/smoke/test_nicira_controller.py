@@ -134,6 +134,7 @@ class TestNiciraContoller(cloudstackTestCase):
                     nicira_physical_network_name = physical_network.name
         if nicira_physical_network_name is None:
             raise Exception('Did not find a Nicira enabled physical network in configuration')
+        print "DEBUG:: >> nicira_physical_network_name = %s" % nicira_physical_network_name
         return PhysicalNetwork.list(cls.api_client, name=nicira_physical_network_name})[0].id
 
 
