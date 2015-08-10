@@ -164,4 +164,5 @@ class TestNiciraContoller(cloudstackTestCase):
             username=self.nicir_credentials['username'],
             password=self.nicir_credentials['password'],
             transportzoneuuid=self.transport_zone_uuid)
+        print "DEBUG:: nicira_device = %s" % nicira_device
         self.cleanup.append(nicira_device)
