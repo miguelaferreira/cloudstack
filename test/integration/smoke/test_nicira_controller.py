@@ -53,15 +53,15 @@ class TestNiciraContoller(cloudstackTestCase):
         )
 
         cls.network_offerring_services = {
-            "name": 'NiciraEnabledNetwork',
-            "displaytext": 'NiciraEnabledNetwork',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'SourceNat,VirtualRouter',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "serviceProviderList": {
-                    "SourceNat": 'VirtualRouter',
-                    "VirtualRouter": 'NiciraNvp'
+            'name':              'NiciraEnabledNetwork',
+            'displaytext':       'NiciraEnabledNetwork',
+            'guestiptype':       'Isolated',
+            'supportedservices': 'SourceNat,Connectivity',
+            'traffictype':       'GUEST',
+            'availability':      'Optional',
+            'serviceProviderList': {
+                    'SourceNat':    'VirtualRouter',
+                    'Connectivity': 'NiciraNvp'
             }
         }
 
