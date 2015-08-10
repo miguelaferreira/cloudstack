@@ -35,17 +35,22 @@ class TestNiciraContoller(cloudstackTestCase):
 
         cls.api_client    = test_client.getApiClient()
         cls.zone          = get_zone(cls.api_client, test_client.getZoneForTests())
-        cls.nicira_config = cls.config.niciraNvp
+        cls.nicira_hosts = cls.config.niciraNvp.hosts
+
+        cls.nicir_credentials = {
+            'username': 'admin',
+            'password': 'admin'
+        }
 
         print "DEBUG:: hosts = %s" % cls.nicira_config.hosts
         cls.nicira_master_controller = cls.determine_master_controller(
-            cls.nicira_config.hosts,
-            cls.nicira_config.credentials
+            cls.nicira_hosts,
+            cls.nicir_credentials
         )
 
         cls.transport_zone_uuid = cls.get_transport_zone_from_controller(
             cls.nicira_master_controller,
-            cls.nicira_config.credentials
+            cls.nicir_credentials
         )
 
         cls.network_offerring_services = {
@@ -155,7 +160,7 @@ class TestNiciraContoller(cloudstackTestCase):
         """
         physical_network_id = self.get_nicira_enabled_physical_network_id(sefl.zone.physical_networks)
 
-        nicira_slave = self.determine_slave_conroller(cls.nicira_config.hosts, cls.nicira_master_controller)
+        nicira_slave = self.determine_slave_conroller(cls.nicira_hosts, cls.nicira_master_controller)
         self.debug("Nicira slave controller is: %s " % nicira_slave)
 
         nicira_device = NiciraNvp.add(
