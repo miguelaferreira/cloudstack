@@ -56,6 +56,7 @@ class TestNiciraContoller(cloudstackTestCase):
             "serviceProviderList": {
                     "SourceNat": 'VirtualRouter',
                     "VirtualRouter": 'NiciraNvp'
+            }
         }
 
         cls.network_offering = NetworkOffering.create(cls.api_client, cls.network_offerring_services)
