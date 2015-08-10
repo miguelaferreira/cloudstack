@@ -33,8 +33,8 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.config     = test_case.getClsConfig()
         cls.api_client = test_client.getApiClient()
 
-        cls.pysical_networks = cls.config.zones[0].pysical_networks
-        print "DEBUG:: pysical_networks = %s" % cls.pysical_networks
+        cls.physical_networks = cls.config.zones[0].physical_networks
+        print "DEBUG:: physical_networks = %s" % cls.physical_networks
         cls.nicira_hosts     = cls.config.niciraNvp.hosts
 
         cls.nicir_credentials = {
