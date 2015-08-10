@@ -33,6 +33,7 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.api_client    = test_client.getApiClient()
         cls.config        = test_client.getParsedTestDataConfig()
         cls.zone          = get_zone(cls.api_client, test_client.getZoneForTests())
+        print "DEBUG:: >> config = %s" % cls.config
         cls.nicira_config = cls.config['niciraNvp']
 
         cls.nicira_master_controller = cls.determine_master_controller(
