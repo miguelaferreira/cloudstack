@@ -30,12 +30,12 @@ class TestNiciraContoller(cloudstackTestCase):
     def setUpClass(cls):
         test_case = super(TestNiciraContoller, cls)
 
-        test_client = test_case.getClsTestClient()
-        cls.config  = test_case.getClsConfig()
+        test_client    = test_case.getClsTestClient()
+        cls.config     = test_case.getClsConfig()
+        cls.api_client = test_client.getApiClient()
 
-        cls.api_client    = test_client.getApiClient()
         cls.zone          = get_zone(cls.api_client, test_client.getZoneForTests())
-        cls.nicira_hosts = cls.config.niciraNvp.hosts
+        cls.nicira_hosts  = cls.config.niciraNvp.hosts
 
         cls.nicir_credentials = {
             'username': 'admin',
@@ -124,8 +124,7 @@ class TestNiciraContoller(cloudstackTestCase):
             raise Exception("Unexpected response from Nicira controller. Status code = %s, content = %s" % status_code)
 
 
-    @classmethod
-    def get_nicira_enabled_physical_network_id(cls, physical_networks):
+    def get_nicira_enabled_physical_network_id(self, physical_networks):
         nicira_physical_network_name = None
         for physical_network in physical_networks:
             for provider in physical_network.providers:
@@ -133,7 +132,7 @@ class TestNiciraContoller(cloudstackTestCase):
                     nicira_physical_network_name = physical_network.name
         if nicira_physical_network_name is None:
             raise Exception('Did not find a Nicira enabled physical network in configuration')
-        return PhysicalNetwork.list(cls.api_client, {'name': nicira_physical_network_name})[0].id
+        return PhysicalNetwork.list(self.api_client, {'name': nicira_physical_network_name})[0].id
 
 
     def determine_slave_conroller(self, hosts, master_controller):
@@ -158,6 +157,7 @@ class TestNiciraContoller(cloudstackTestCase):
             If all is well, no matter what controller is specified in the Nicira Nvp device, status check
             should awyas succeed.
         """
+        print "DEBUG:: >> zone = %s" % self.zone
         physical_network_id = self.get_nicira_enabled_physical_network_id(self.zone.physical_networks)
 
         nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
