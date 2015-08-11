@@ -78,8 +78,8 @@ class TestNiciraContoller(cloudstackTestCase):
             cls.nicir_credentials
         )
 
-        domain   = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, test_client.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
+        cls.zone   = get_zone(cls.api_client, test_client.getZoneForTests())
 
         template = get_template(
             cls.api_client,
@@ -225,13 +225,17 @@ class TestNiciraContoller(cloudstackTestCase):
         }
         network = Network.create(
             self.api_client,
-            network_services
+            network_services,
+            accountid='admin',
+            domainid=cls.domain.id,
         )
         self.cleanup.append(network)
 
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
+            accountid='admin',
+            domainid=cls.domain.id,
             serviceofferingid=self.service_offering.id,
             networkids=network.id,
             mode=self.vm_services['mode']
