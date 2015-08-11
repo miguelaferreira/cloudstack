@@ -215,12 +215,10 @@ class TestNiciraContoller(cloudstackTestCase):
             This test assumes that a Nicira cluster is present and configured properly, and
             that it has at least two controller nodes. The test will check that ASC follows
             redirects by:
-                - adding a Nicira Nvp device that points to one of the cluster's  controllers,
-                - checking the device status,
-                - replacing the Nicira Nvp device by another one that points to another controller,
-                - and checking the device status
-            If all is well, no matter what controller is specified in the Nicira Nvp device, status check
-            should awyas succeed.
+                - adding a Nicira Nvp device that points to one of the cluster's slave controllers,
+                - create a VM in a Nicira backed network
+            If all is well, no matter what controller is specified (slaves or master), the vm (and respective router VM)
+            should be created without issues.
         """
         nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
         self.debug("Nicira slave controller is: %s " % nicira_slave)
@@ -252,7 +250,7 @@ class TestNiciraContoller(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
-            accountid=self.account.id,
+            accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             mode=self.vm_services['mode']
