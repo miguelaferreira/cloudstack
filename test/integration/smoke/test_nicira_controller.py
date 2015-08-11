@@ -30,6 +30,7 @@ from marvin.lib.base import (
 )
 from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
+from marvin.codes import (FAILED, PASS)
 import time
 
 class TestNiciraContoller(cloudstackTestCase):
