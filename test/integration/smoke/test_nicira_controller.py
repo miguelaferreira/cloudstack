@@ -19,7 +19,16 @@
 import requests
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import cleanup_resources
-from marvin.lib.base import (PhysicalNetwork, NetworkOffering, NiciraNvp)
+from marvin.lib.base import (
+    PhysicalNetwork,
+    NetworkOffering,
+    NiciraNvp,
+    Account,
+    ServiceOffering,
+    Network,
+    VirtualMachine
+)
+from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
 import time
 
@@ -34,7 +43,7 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.api_client = test_client.getApiClient()
 
         cls.physical_networks = cls.config.zones[0].physical_networks
-        cls.nicira_hosts     = cls.config.niciraNvp.hosts
+        cls.nicira_hosts      = cls.config.niciraNvp.hosts
 
         cls.physical_network_id = cls.get_nicira_enabled_physical_network_id(cls.physical_networks)
 
@@ -69,8 +78,47 @@ class TestNiciraContoller(cloudstackTestCase):
             cls.nicir_credentials
         )
 
+        domain   = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, test_client.getZoneForTests())
+
+        cls.vm_services['mode'] = cls.zone.networktype
+
+        if cls.zone.localstorageenabled == True:
+            cls.vm_services["service_offerings"]["tiny"]["storagetype"] = 'local'
+            cls.vm_services["service_offerings"]["small"]["storagetype"] = 'local'
+            cls.vm_services["service_offerings"]["medium"]["storagetype"] = 'local'
+
+        template = get_template(
+            cls.api_client,
+            cls.zone.id,
+            cls.vm_services["ostype"]
+        )
+        if template == FAILED:
+            raise Exception("get_template() failed to return template with description %s" % cls.services["ostype"])
+
+        cls.vm_services["small"]["zoneid"] = cls.zone.id
+        cls.vm_services["small"]["template"] = template.id
+
+        cls.vm_services["medium"]["zoneid"] = cls.zone.id
+        cls.vm_services["medium"]["template"] = template.id
+        cls.vm_services["iso1"]["zoneid"] = cls.zone.id
+
+        cls.account = Account.create(
+            cls.apic_lient,
+            cls.vm_services["account"],
+            domainid=domain.id
+        )
+        cls.debug(cls.account.id)
+
+        cls.service_offering = ServiceOffering.create(
+            cls.api_client,
+            cls.vm_services["service_offerings"]["tiny"]
+        )
+
         cls.cleanup = [
-            cls.network_offering
+            cls.network_offering,
+            cls.account,
+            cls.service_offering
         ]
 
 
@@ -127,7 +175,6 @@ class TestNiciraContoller(cloudstackTestCase):
                     nicira_physical_network_name = physical_network.name
         if nicira_physical_network_name is None:
             raise Exception('Did not find a Nicira enabled physical network in configuration')
-        print "DEBUG:: >> nicira_physical_network_name = %s" % nicira_physical_network_name
         return PhysicalNetwork.list(cls.api_client, name=nicira_physical_network_name)[0].id
 
 
@@ -164,5 +211,39 @@ class TestNiciraContoller(cloudstackTestCase):
             username=self.nicir_credentials['username'],
             password=self.nicir_credentials['password'],
             transportzoneuuid=self.transport_zone_uuid)
-        print "DEBUG:: nicira_device = %s" % nicira_device.__dict__
         self.cleanup.append(nicira_device)
+
+        network_services = {
+            'name'            : 'nicira_enabled_network',
+            'displaytext'     : 'nicira_enabled_network',
+            'zoneid'          : self.zone.id,
+            'networkoffering' : self.network_offering.id
+        }
+        network = Network.create(
+            self.api_client,
+            network_services
+            accountid=self.account.id,
+            domainid=self.account.domainid
+        )
+        self.cleanup.append(network)
+
+        virtual_machine = VirtualMachine.create(
+            self.api_client,
+            self.vm_services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            mode=self.vm_services['mode']
+        )
+        self.cleanup.append(virtual_machine)
+
+        list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
+        self.debug("Verify listVirtualMachines response for virtual machine: %s" % self.virtual_machine.id)
+
+        self.assertEqual(isinstance(list_vm_response, list), True, 'Response rdid not return a valid list')
+        self.assertNotEqual(len(list_vm_response), 0, 'List of VMs is empty')
+
+        vm_response = list_vm_response[0]
+        self.assertEqual(vm_response.id, virtual_machine.id, 'Virtual machine in response does not match request')
+        self.assertEqual(vm_response.state, 'Running', 'VM is not in Running state')
+
