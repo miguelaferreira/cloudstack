@@ -151,12 +151,6 @@ class TestNiciraContoller(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during class cleanup : %s" % e)
 
-    def tearDowns(self):
-        try:
-            cleanup_resources(self.api_client, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during test cleanup : %s" % e)
-
 
     @classmethod
     def determine_master_controller(cls, hosts, credentials):
@@ -258,7 +252,7 @@ class TestNiciraContoller(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
-            accountid=self.account.name,
+            accountid=self.account.id,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             mode=self.vm_services['mode']
