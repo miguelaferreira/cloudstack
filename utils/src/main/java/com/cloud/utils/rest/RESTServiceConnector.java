@@ -46,6 +46,7 @@ import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodBase;
@@ -61,6 +62,7 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 
 import com.google.gson.FieldNamingPolicy;
@@ -92,7 +94,7 @@ public class RESTServiceConnector {
 
     protected final static String protocol = HTTPS;
 
-    private final static MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
+    private final static HttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     protected RESTValidationStrategy validation;
 
@@ -135,6 +137,7 @@ public class RESTServiceConnector {
     }
 
     public HttpClient createHttpClient() {
+        HttpClientBuilder.create().setConnectionManager(s_httpClientManager);
         return new HttpClient(s_httpClientManager);
     }
 
