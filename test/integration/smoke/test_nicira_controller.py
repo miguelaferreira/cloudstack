@@ -126,7 +126,7 @@ class TestNiciraContoller(cloudstackTestCase):
             cls.vm_services['service_offerings']['tiny']['storagetype'] = 'local'
 
         cls.account = Account.create(
-            cls.apic_lient,
+            cls.api_client,
             cls.vm_services['account'],
             domainid=domain.id
         )
