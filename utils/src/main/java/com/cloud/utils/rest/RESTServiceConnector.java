@@ -62,7 +62,6 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 
 import com.google.gson.FieldNamingPolicy;
@@ -137,7 +136,6 @@ public class RESTServiceConnector {
     }
 
     public HttpClient createHttpClient() {
-        HttpClientBuilder.create().setConnectionManager(s_httpClientManager);
         return new HttpClient(s_httpClientManager);
     }
 
@@ -370,7 +368,7 @@ public class RESTServiceConnector {
 
         @Override
         public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params) throws IOException,
-                UnknownHostException, ConnectTimeoutException {
+        UnknownHostException, ConnectTimeoutException {
             final int timeout = params.getConnectionTimeout();
             if (timeout == 0) {
                 final Socket socket = createSocket(host, port, localAddress, localPort);
