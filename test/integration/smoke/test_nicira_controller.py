@@ -93,15 +93,15 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.vm_services = {
             'mode': cls.zone.networktype,
             'account': {
-                'email': 'test@test.com',
+                'email':     'test@test.com',
                 'firstname': 'Test',
-                'lastname': 'User',
-                'username': 'test',
-                'password': 'password',
+                'lastname':  'User',
+                'username':  'test',
+                'password':  'password',
             },
             'small': {
-                'zoneid':      cls.zone.id
-                'template':    template.id
+                'zoneid':      cls.zone.id,
+                'template':    template.id,
                 'displayname': 'testserver',
                 'username':    cls.config.zones[0].pods[0].clusters[0].hosts[0].username,
                 'password':    cls.config.zones[0].pods[0].clusters[0].hosts[0].password,
