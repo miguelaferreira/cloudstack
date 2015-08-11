@@ -244,7 +244,7 @@ class TestNiciraContoller(cloudstackTestCase):
         network = Network.create(
             self.api_client,
             network_services,
-            accountid=self.account.id,
+            accountid=self.account.name,
             domainid=self.account.domainid
         )
         self.cleanup.append(network)
@@ -252,7 +252,7 @@ class TestNiciraContoller(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
-            accountid=self.account.id,
+            accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             mode=self.vm_services['mode']
