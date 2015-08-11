@@ -8,6 +8,23 @@ import org.junit.Test;
 
 public class HttpStatusCodeHelperTest {
     @Test
+    public void testIsRedirect() throws Exception {
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_PARTIAL_CONTENT), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MULTI_STATUS), equalTo(false));
+
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MULTIPLE_CHOICES), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MOVED_PERMANENTLY), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MOVED_TEMPORARILY), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_SEE_OTHER), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_NOT_MODIFIED), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_USE_PROXY), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_TEMPORARY_REDIRECT), equalTo(true));
+
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_BAD_REQUEST), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_UNAUTHORIZED), equalTo(false));
+    }
+
+    @Test
     public void testIsUnauthorized() throws Exception {
         assertThat(HttpStatusCodeHelper.isUnauthorized(HttpStatus.SC_TEMPORARY_REDIRECT), equalTo(false));
         assertThat(HttpStatusCodeHelper.isUnauthorized(HttpStatus.SC_BAD_REQUEST), equalTo(false));
