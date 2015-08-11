@@ -198,7 +198,7 @@ public class RESTServiceConnectorTest {
     }
 
     @Test
-    public void testExecuteMethodFollowingRedirect() throws Exception {
+    public void testExecuteMethodImplicitlyFollowingRedirect() throws Exception {
         final RESTValidationStrategy validation = spy(new RESTValidationStrategy());
         doNothing().when(validation).login(anyString(), (HttpClient) any());
         connector.validation = validation;
@@ -206,6 +206,7 @@ public class RESTServiceConnectorTest {
         connector.setControllerAddress("localhost");
 
         final HttpMethodBase method = mock(HttpMethodBase.class);
+        // when the underlying HttpClient follows the redirect, there is no redirect code
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
 
         when(method.getURI()).thenReturn(new URI(new URL("HTTPS", "newhost", "/something").toString(), false));
