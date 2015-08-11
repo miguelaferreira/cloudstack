@@ -81,7 +81,7 @@ class TestNiciraContoller(cloudstackTestCase):
         domain   = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, test_client.getZoneForTests())
 
-        cls.vm_services['mode'] = cls.zone.networktype
+        cls.vm_services = {'mode': cls.zone.networktype }
 
         if cls.zone.localstorageenabled == True:
             cls.vm_services["service_offerings"]["tiny"]["storagetype"] = 'local'
