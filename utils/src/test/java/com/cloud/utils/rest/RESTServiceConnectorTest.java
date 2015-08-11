@@ -218,6 +218,24 @@ public class RESTServiceConnectorTest {
     }
 
     @Test
+    public void testExecuteMethodExplicitlyFollowingRedirect() throws Exception {
+        final RESTValidationStrategy validation = spy(new RESTValidationStrategy());
+        doNothing().when(validation).login(anyString(), (HttpClient) any());
+        connector.validation = validation;
+        connector.setAdminCredentials("admin", "adminpass");
+        connector.setControllerAddress("localhost");
+
+        final HttpMethodBase method = mock(HttpMethodBase.class);
+        when(method.getStatusCode()).thenReturn(HttpStatus.SC_MOVED_PERMANENTLY).thenReturn(HttpStatus.SC_OK);
+        when(method.getResponseHeader("location")).thenReturn(new Header("location", "http://newhost/something"));
+
+        connector.executeMethod(method);
+
+        assertThat(connector.validation.getHost(), equalTo("newhost"));
+        verify(connector.validation, times(1)).login(anyString(), (HttpClient) any());
+    }
+
+    @Test
     public void testExecuteCreateObject() throws CloudstackRESTException, IOException {
         JsonEntity ls = new JsonEntity();
         method = mock(PostMethod.class);
