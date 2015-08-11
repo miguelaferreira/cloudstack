@@ -151,6 +151,12 @@ class TestNiciraContoller(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during class cleanup : %s" % e)
 
+    def tearDowns(self):
+        try:
+            cleanup_resources(self.api_client, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during test cleanup : %s" % e)
+
 
     @classmethod
     def determine_master_controller(cls, hosts, credentials):
