@@ -104,7 +104,7 @@ public class RESTValidationStrategy {
             loginAndRetryMethod(method, client, protocol);
             final String methodHost = method.getURI().getHost();
             if (HttpStatusCodeHelper.isUnauthorized(method.getStatusCode()) && hasMethodHostChanged(methodHost)) {
-                s_logger.debug("Got a second 401 while the host in the HTTP method has changed to " + methodHost);
+                s_logger.debug("Redirect handled by HttpClient: Got a second 401 while the host in the HTTP method has changed to " + methodHost);
                 setHost(methodHost);
                 loginAndRetryMethod(method, client, protocol);
             }
