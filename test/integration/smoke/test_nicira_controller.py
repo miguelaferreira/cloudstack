@@ -221,7 +221,7 @@ class TestNiciraContoller(cloudstackTestCase):
         }
         network = Network.create(
             self.api_client,
-            network_services
+            network_services,
             accountid=self.account.id,
             domainid=self.account.domainid
         )
