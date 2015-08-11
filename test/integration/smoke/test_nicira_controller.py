@@ -84,11 +84,11 @@ class TestNiciraContoller(cloudstackTestCase):
 
         template = get_template(
             cls.api_client,
-            cls.zone.id,
-            'Linux'
+            cls.zone.id
         )
         if template == FAILED:
             raise Exception("get_template() failed to return template with description %s" % cls.services['ostype'])
+        print "DEBUG:: template = %s" % tempalte__dict__
 
         cls.vm_services = {
             'mode': cls.zone.networktype,
