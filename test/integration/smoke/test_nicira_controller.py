@@ -23,7 +23,6 @@ from marvin.lib.base import (
     PhysicalNetwork,
     NetworkOffering,
     NiciraNvp,
-    Account,
     ServiceOffering,
     Network,
     VirtualMachine
@@ -92,13 +91,6 @@ class TestNiciraContoller(cloudstackTestCase):
 
         cls.vm_services = {
             'mode': cls.zone.networktype,
-            # 'account': {
-            #     'email':     'test@test.com',
-            #     'firstname': 'Test',
-            #     'lastname':  'User',
-            #     'username':  'test',
-            #     'password':  'password',
-            # },
             'small': {
                 'zoneid':      cls.zone.id,
                 'template':    template.id,
@@ -125,13 +117,6 @@ class TestNiciraContoller(cloudstackTestCase):
         if cls.zone.localstorageenabled == True:
             cls.vm_services['service_offerings']['tiny']['storagetype'] = 'local'
 
-        # cls.account = Account.create(
-        #     cls.api_client,
-        #     cls.vm_services['account'],
-        #     domainid=domain.id
-        # )
-        # cls.debug("Created account with ID = %s" % cls.account.id)
-
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.vm_services['service_offerings']['tiny']
@@ -139,7 +124,6 @@ class TestNiciraContoller(cloudstackTestCase):
 
         cls.cleanup = [
             cls.network_offering,
-            # cls.account,
             cls.service_offering
         ]
 
@@ -241,18 +225,15 @@ class TestNiciraContoller(cloudstackTestCase):
         }
         network = Network.create(
             self.api_client,
-            network_services#,
-            # accountid=self.account.name,
-            # domainid=self.account.domainid
+            network_services
         )
         self.cleanup.append(network)
 
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
-            # accountid=self.account.name,
-            # domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
+            networkids=network.id,
             mode=self.vm_services['mode']
         )
         self.cleanup.append(virtual_machine)
