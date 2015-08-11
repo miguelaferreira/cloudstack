@@ -130,7 +130,7 @@ class TestNiciraContoller(cloudstackTestCase):
             cls.vm_services['account'],
             domainid=domain.id
         )
-        cls.debug(cls.account.id)
+        cls.debug("Created account with ID = %s" % cls.account.id)
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -252,7 +252,7 @@ class TestNiciraContoller(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
-            accountid=self.account.name,
+            accountid=self.account.id,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             mode=self.vm_services['mode']
