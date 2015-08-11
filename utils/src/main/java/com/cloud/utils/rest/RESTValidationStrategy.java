@@ -23,9 +23,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethodBase;
+import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Logger;
@@ -108,6 +110,19 @@ public class RESTValidationStrategy {
                 setHost(methodHost);
                 loginAndRetryMethod(method, client, protocol);
             }
+        } else if (HttpStatusCodeHelper.isRedirect(statusCode)) {
+            handleRedirect(method.getResponseHeader("location"));
+            loginAndRetryMethod(method, client, protocol);
+        }
+    }
+
+    private void handleRedirect(final Header locationHeader) throws URIException, CloudstackRESTException {
+        if (locationHeader != null) {
+            final String redirectLocation = locationHeader.getValue();
+            setHost(new URI(redirectLocation, false).getHost());
+            s_logger.debug("Redirect not handled by HttpClient: Redirecting to " + getHost());
+        } else {
+            throw new CloudstackRESTException("Redirect header did not have a location attribute");
         }
     }
 
