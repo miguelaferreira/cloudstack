@@ -82,31 +82,48 @@ class TestNiciraContoller(cloudstackTestCase):
         domain   = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, test_client.getZoneForTests())
 
-        cls.vm_services = {
-            'mode': cls.zone.networktype,
-            'ostype': 'Linux',
-            'account': { 'usernmame': 'admin', 'password': 'password' }
-        }
-
-        if cls.zone.localstorageenabled == True:
-            cls.vm_services['service_offerings']['tiny']['storagetype'] = 'local'
-            cls.vm_services['service_offerings']['small']['storagetype'] = 'local'
-            cls.vm_services['service_offerings']['medium']['storagetype'] = 'local'
-
         template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.vm_services['ostype']
+            'Linux'
         )
         if template == FAILED:
             raise Exception("get_template() failed to return template with description %s" % cls.services['ostype'])
 
-        cls.vm_services['small']['zoneid'] = cls.zone.id
-        cls.vm_services['small']['template'] = template.id
+        cls.vm_services = {
+            'mode': cls.zone.networktype,
+            'account': {
+                'email': 'test@test.com',
+                'firstname': 'Test',
+                'lastname': 'User',
+                'username': 'test',
+                'password': 'password',
+            },
+            'small': {
+                'zoneid':      cls.zone.id
+                'template':    template.id
+                'displayname': 'testserver',
+                'username':    cls.config.zones[0].pods[0].clusters[0].hosts[0].username,
+                'password':    cls.config.zones[0].pods[0].clusters[0].hosts[0].password,
+                'ssh_port':    22,
+                'hypervisor':  cls.config.zones[0].pods[0].clusters[0].hypervisor,
+                'privateport': 22,
+                'publicport':  22,
+                'protocol':    'TCP',
+            },
+            'service_offerings': {
+                'tiny': {
+                    'name':        'Tiny Instance',
+                    'displaytext': 'Tiny Instance',
+                    'cpunumber':   1,
+                    'cpuspeed':    100,
+                    'memory':      64,
+                }
+            }
+        }
 
-        cls.vm_services['medium']['zoneid'] = cls.zone.id
-        cls.vm_services['medium']['template'] = template.id
-        cls.vm_services['iso1']['zoneid'] = cls.zone.id
+        if cls.zone.localstorageenabled == True:
+            cls.vm_services['service_offerings']['tiny']['storagetype'] = 'local'
 
         cls.account = Account.create(
             cls.apic_lient,
@@ -234,7 +251,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
         virtual_machine = VirtualMachine.create(
             self.api_client,
-            self.vm_services["small"],
+            self.vm_services['small'],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
