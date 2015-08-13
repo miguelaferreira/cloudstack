@@ -8,6 +8,42 @@ import org.junit.Test;
 
 public class HttpStatusCodeHelperTest {
     @Test
+    public void testIsSuccess() throws Exception {
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_SWITCHING_PROTOCOLS), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_PROCESSING), equalTo(false));
+
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_OK), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_CREATED), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_ACCEPTED), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_NON_AUTHORITATIVE_INFORMATION), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_NO_CONTENT), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_RESET_CONTENT), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_PARTIAL_CONTENT), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_MULTI_STATUS), equalTo(true));
+
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_MULTIPLE_CHOICES), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_MOVED_PERMANENTLY), equalTo(false));
+    }
+
+    @Test
+    public void testIsNotSuccess() throws Exception {
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_SWITCHING_PROTOCOLS), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_PROCESSING), equalTo(true));
+
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_OK), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_CREATED), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_ACCEPTED), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_NON_AUTHORITATIVE_INFORMATION), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_NO_CONTENT), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_RESET_CONTENT), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_PARTIAL_CONTENT), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_MULTI_STATUS), equalTo(false));
+
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_MULTIPLE_CHOICES), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_MOVED_PERMANENTLY), equalTo(true));
+    }
+
+    @Test
     public void testIsRedirect() throws Exception {
         assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_PARTIAL_CONTENT), equalTo(false));
         assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MULTI_STATUS), equalTo(false));

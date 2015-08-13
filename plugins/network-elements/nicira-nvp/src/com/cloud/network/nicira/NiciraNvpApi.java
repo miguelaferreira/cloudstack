@@ -20,10 +20,8 @@
 package com.cloud.network.nicira;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -80,14 +78,11 @@ public class NiciraNvpApi {
     }
 
     public NiciraNvpApi() {
-        final List<Class<?>> classList = new ArrayList<Class<?>>();
-        classList.add(NatRule.class);
-        classList.add(RoutingConfig.class);
-        final List<JsonDeserializer<?>> deserializerList = new ArrayList<JsonDeserializer<?>>();
-        deserializerList.add(new NatRuleAdapter());
-        deserializerList.add(new RoutingConfigAdapter());
+        final Map<Class<?>, JsonDeserializer<?>> classToDeserializerMap = new HashMap<>();
+        classToDeserializerMap.put(NatRule.class, new NatRuleAdapter());
+        classToDeserializerMap.put(RoutingConfig.class, new RoutingConfigAdapter());
 
-        restConnector = new RESTServiceConnector(new RESTValidationStrategy(LOGIN_URL), classList, deserializerList);
+        restConnector = new RESTServiceConnector(new RESTValidationStrategy(LOGIN_URL), classToDeserializerMap);
     }
 
     public NiciraNvpApi(final String address, final String username, final String password) {
@@ -545,7 +540,7 @@ public class NiciraNvpApi {
     }
 
     public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(final String logicalRouterUuid, final String gatewayServiceUuid, final long vlanId)
-            throws NiciraNvpApiException {
+                    throws NiciraNvpApiException {
         final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("attachment_gwsvc_uuid", gatewayServiceUuid);
@@ -574,7 +569,7 @@ public class NiciraNvpApi {
     }
 
     public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(final String logicalRouterUuid, final String l3GatewayServiceUuid)
-            throws NiciraNvpApiException {
+                    throws NiciraNvpApiException {
         final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("fields", "*");

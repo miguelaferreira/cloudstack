@@ -3,6 +3,14 @@ package com.cloud.utils.rest;
 import org.apache.commons.httpclient.HttpStatus;
 
 public class HttpStatusCodeHelper {
+    public static boolean isSuccess(final int statusCode) {
+        return statusCode >= HttpStatus.SC_OK && statusCode <= HttpStatus.SC_MULTI_STATUS;
+    }
+
+    public static boolean isNotSuccess(final int statusCode) {
+        return !isSuccess(statusCode);
+    }
+
     public static boolean isRedirect(final int statusCode) {
         return statusCode >= HttpStatus.SC_MULTIPLE_CHOICES && statusCode <= HttpStatus.SC_TEMPORARY_REDIRECT;
     }
