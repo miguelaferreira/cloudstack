@@ -11,6 +11,8 @@ import org.apache.log4j.Logger;
 
 public class RestClient {
 
+    private static final int DEFAULT_MAX_REDIRECTS = 5;
+
     private static final Logger s_logger = Logger.getLogger(RestClient.class);
 
     private static final String CONTENT_TYPE = HttpConstants.CONTENT_TYPE;
@@ -21,6 +23,10 @@ public class RestClient {
     private final CloseableHttpClient client;
 
     private int maxResponseErrorMesageLength = -1;
+
+    public RestClient(final String username, final String password) {
+        this(HttpClientHelper.createHttpClient(username, password, DEFAULT_MAX_REDIRECTS));
+    }
 
     public RestClient(final CloseableHttpClient client) {
         this.client = client;

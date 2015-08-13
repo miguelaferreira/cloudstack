@@ -27,7 +27,7 @@ import java.util.UUID;
 
 import com.cloud.utils.rest.CloudstackRESTException;
 import com.cloud.utils.rest.RESTServiceConnector;
-import com.cloud.utils.rest.RESTValidationStrategy;
+import com.cloud.utils.rest.RestClient;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -48,7 +48,7 @@ public class NiciraNvpApi {
     private static final String ROUTER_URI_PREFIX = "/ws.v1/lrouter";
     private static final String LOGIN_URL = "/ws.v1/login";
 
-    protected RESTServiceConnector restConnector;
+    private final RESTServiceConnector restConnector;
 
     protected final static Map<Class, String> prefixMap;
 
@@ -77,26 +77,16 @@ public class NiciraNvpApi {
         defaultListParams.put("fields", "*");
     }
 
-    public NiciraNvpApi() {
+    public NiciraNvpApi(final String address, final String username, final String password) {
         final Map<Class<?>, JsonDeserializer<?>> classToDeserializerMap = new HashMap<>();
         classToDeserializerMap.put(NatRule.class, new NatRuleAdapter());
         classToDeserializerMap.put(RoutingConfig.class, new RoutingConfigAdapter());
 
-        restConnector = new RESTServiceConnector(new RESTValidationStrategy(LOGIN_URL), classToDeserializerMap);
-    }
-
-    public NiciraNvpApi(final String address, final String username, final String password) {
-        this();
-        restConnector.setControllerAddress(address);
-        restConnector.setAdminCredentials(username, password);
-    }
-
-    public void setControllerAddress(final String address) {
-        restConnector.setControllerAddress(address);
-    }
-
-    public void setAdminCredentials(final String username, final String password) {
-        restConnector.setAdminCredentials(username, password);
+        restConnector = new RESTServiceConnector.Builder()
+            .classToDeserializerMap(classToDeserializerMap)
+            .host(address)
+            .client(new RestClient(username, password))
+            .build();
     }
 
     /**
@@ -121,8 +111,7 @@ public class NiciraNvpApi {
     protected <T> T createWithUri(final T entity, final String uri) throws NiciraNvpApiException {
         T createdEntity;
         try {
-            createdEntity = restConnector.executeCreateObject(entity, new TypeToken<T>() {
-            }.getType(), uri, Collections.<String, String> emptyMap());
+            createdEntity = restConnector.executeCreateObject(entity, uri, Collections.<String, String> emptyMap());
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
