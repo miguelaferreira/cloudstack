@@ -42,6 +42,7 @@ import com.cloud.network.nicira.NiciraNvpApiException;
 import com.cloud.network.nicira.SourceNatRule;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.rest.CloudstackRESTException;
 
 public class NiciraNvpResource implements ServerResource {
 
@@ -58,7 +59,7 @@ public class NiciraNvpResource implements ServerResource {
     private NiciraNvpUtilities niciraNvpUtilities;
     private CommandRetryUtility retryUtility;
 
-    protected NiciraNvpApi createNiciraNvpApi(final String host, final String username, final String password) {
+    protected NiciraNvpApi createNiciraNvpApi(final String host, final String username, final String password) throws CloudstackRESTException {
         return new NiciraNvpApi(host, username, password);
     }
 
@@ -99,7 +100,11 @@ public class NiciraNvpResource implements ServerResource {
         retryUtility = CommandRetryUtility.getInstance();
         retryUtility.setServerResource(this);
 
-        niciraNvpApi = createNiciraNvpApi(ip, adminuser, adminpass);
+        try {
+            niciraNvpApi = createNiciraNvpApi(ip, adminuser, adminpass);
+        } catch (final CloudstackRESTException e) {
+            throw new ConfigurationException("Could not create a Nicira Nvp API client: " + e.getMessage());
+        }
 
         return true;
     }

@@ -25,9 +25,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.http.impl.client.CloseableHttpClient;
+
 import com.cloud.utils.rest.CloudstackRESTException;
 import com.cloud.utils.rest.RESTServiceConnector;
-import com.cloud.utils.rest.RestClient;
+import com.google.common.base.Optional;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -37,16 +39,15 @@ import com.google.gson.reflect.TypeToken;
 
 @SuppressWarnings("rawtypes")
 public class NiciraNvpApi {
-    protected static final String GET_METHOD_TYPE = "get";
-    protected static final String DELETE_METHOD_TYPE = "delete";
-    protected static final String PUT_METHOD_TYPE = "put";
-    protected static final String POST_METHOD_TYPE = "post";
 
-    protected static final String SEC_PROFILE_URI_PREFIX = "/ws.v1/security-profile";
-    protected static final String ACL_URI_PREFIX = "/ws.v1/acl";
+    private static final Optional<String> ABSENT = Optional.absent();
+    private static final String SEC_PROFILE_URI_PREFIX = "/ws.v1/security-profile";
+    private static final String ACL_URI_PREFIX = "/ws.v1/acl";
     private static final String SWITCH_URI_PREFIX = "/ws.v1/lswitch";
     private static final String ROUTER_URI_PREFIX = "/ws.v1/lrouter";
     private static final String LOGIN_URL = "/ws.v1/login";
+
+    private static final int DEFAULT_MAX_RETRIES = 5;
 
     private final RESTServiceConnector restConnector;
 
@@ -77,16 +78,27 @@ public class NiciraNvpApi {
         defaultListParams.put("fields", "*");
     }
 
-    public NiciraNvpApi(final String address, final String username, final String password) {
+    private NiciraNvpApi(final Builder builder) {
         final Map<Class<?>, JsonDeserializer<?>> classToDeserializerMap = new HashMap<>();
         classToDeserializerMap.put(NatRule.class, new NatRuleAdapter());
         classToDeserializerMap.put(RoutingConfig.class, new RoutingConfigAdapter());
 
-        restConnector = new RESTServiceConnector.Builder()
-            .classToDeserializerMap(classToDeserializerMap)
-            .host(address)
-            .client(new RestClient(username, password))
+        final NiciraRestClient niciraRestClient = NiciraRestClient.create()
+            .client(builder.httpClient)
+            .hostname(builder.host)
+            .username(builder.username)
+            .password(builder.password)
+            .loginUrl(LOGIN_URL)
+            .executionLimit(DEFAULT_MAX_RETRIES)
             .build();
+        restConnector = RESTServiceConnector.create()
+            .classToDeserializerMap(classToDeserializerMap)
+            .client(niciraRestClient)
+            .build();
+    }
+
+    public static Builder create() {
+        return new Builder();
     }
 
     /**
@@ -126,22 +138,23 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     protected <T> NiciraNvpList<T> find(final Class<T> clazz) throws NiciraNvpApiException {
-        return find(null, clazz);
+        return find(ABSENT, clazz);
     }
 
     /**
      * GET list of items
      *
      * @param uuid
+     *
      * @return
      * @throws NiciraNvpApiException
      */
-    public <T> NiciraNvpList<T> find(final String uuid, final Class<T> clazz) throws NiciraNvpApiException {
+    public <T> NiciraNvpList<T> find(final Optional<String> uuid, final Class<T> clazz) throws NiciraNvpApiException {
         final String uri = prefixMap.get(clazz);
         Map<String, String> params = defaultListParams;
-        if (uuid != null) {
+        if (uuid.isPresent()) {
             params = new HashMap<String, String>(defaultListParams);
-            params.put("uuid", uuid);
+            params.put("uuid", uuid.get());
         }
 
         NiciraNvpList<T> entities;
@@ -228,7 +241,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public NiciraNvpList<SecurityProfile> findSecurityProfile() throws NiciraNvpApiException {
-        return findSecurityProfile(null);
+        return findSecurityProfile(ABSENT);
     }
 
     /**
@@ -240,7 +253,7 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<SecurityProfile> findSecurityProfile(final String uuid) throws NiciraNvpApiException {
+    public NiciraNvpList<SecurityProfile> findSecurityProfile(final Optional<String> uuid) throws NiciraNvpApiException {
         return find(uuid, SecurityProfile.class);
     }
 
@@ -283,7 +296,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public NiciraNvpList<Acl> findAcl() throws NiciraNvpApiException {
-        return findAcl(null);
+        return findAcl(ABSENT);
     }
 
     /**
@@ -293,7 +306,7 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<Acl> findAcl(final String uuid) throws NiciraNvpApiException {
+    public NiciraNvpList<Acl> findAcl(final Optional<String> uuid) throws NiciraNvpApiException {
         return find(uuid, Acl.class);
     }
 
@@ -329,7 +342,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public NiciraNvpList<LogicalSwitch> findLogicalSwitch() throws NiciraNvpApiException {
-        return findLogicalSwitch(null);
+        return findLogicalSwitch(ABSENT);
     }
 
     /**
@@ -339,7 +352,7 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<LogicalSwitch> findLogicalSwitch(final String uuid) throws NiciraNvpApiException {
+    public NiciraNvpList<LogicalSwitch> findLogicalSwitch(final Optional<String> uuid) throws NiciraNvpApiException {
         return find(uuid, LogicalSwitch.class);
     }
 
@@ -405,7 +418,7 @@ public class NiciraNvpApi {
         ControlClusterStatus ccs;
         try {
             ccs = restConnector.executeRetrieveObject(new TypeToken<ControlClusterStatus>() {
-            }.getType(), uri, null);
+            }.getType(), uri, new HashMap<String, String>());
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
@@ -466,7 +479,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public NiciraNvpList<LogicalRouter> findLogicalRouter() throws NiciraNvpApiException {
-        return findLogicalRouter(null);
+        return findLogicalRouter(ABSENT);
     }
 
     /**
@@ -476,11 +489,11 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<LogicalRouter> findLogicalRouter(final String uuid) throws NiciraNvpApiException {
+    public NiciraNvpList<LogicalRouter> findLogicalRouter(final Optional<String> uuid) throws NiciraNvpApiException {
         return find(uuid, LogicalRouter.class);
     }
 
-    public LogicalRouter findOneLogicalRouterByUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
+    public LogicalRouter findOneLogicalRouterByUuid(final Optional<String> logicalRouterUuid) throws NiciraNvpApiException {
         return findLogicalRouter(logicalRouterUuid).getResults().get(0);
     }
 
@@ -569,6 +582,37 @@ public class NiciraNvpApi {
             }.getType(), uri, params);
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
+        }
+    }
+
+    public static class Builder {
+        private String host;
+        private String username;
+        private String password;
+        private CloseableHttpClient httpClient;
+
+        public Builder host(final String host) {
+            this.host = host;
+            return this;
+        }
+
+        public Builder username(final String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder password(final String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder httpClient(final CloseableHttpClient httpClient) {
+            this.httpClient = httpClient;
+            return this;
+        }
+
+        public NiciraNvpApi build() {
+            return new NiciraNvpApi(this);
         }
     }
 

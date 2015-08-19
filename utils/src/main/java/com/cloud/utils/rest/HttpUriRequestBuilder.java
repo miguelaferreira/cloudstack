@@ -16,73 +16,72 @@ import org.springframework.util.Assert;
 
 import com.google.common.base.Optional;
 
-public class RestRequestBuilder {
+public class HttpUriRequestBuilder {
 
     private static final String CONTENT_TYPE = HttpConstants.CONTENT_TYPE;
     private static final String JSON_CONTENT_TYPE = HttpConstants.JSON_CONTENT_TYPE;
 
-    private static final String HTTPS = HttpConstants.HTTPS;
-
     private static final Optional<String> ABSENT = Optional.absent();
 
     private HttpMethod method;
-    private String host;
     private String path;
     private Optional<String> jsonPayload = ABSENT;
     private final Map<String, String> parameters = new HashMap<String, String>();
 
-    public RestRequestBuilder method(final HttpMethod method) {
+    private HttpUriRequestBuilder() {
+
+    }
+
+    public static HttpUriRequestBuilder create() {
+        return new HttpUriRequestBuilder();
+    }
+
+    public HttpUriRequestBuilder method(final HttpMethod method) {
         this.method = method;
         return this;
     }
 
-    public RestRequestBuilder host(final String host) {
-        this.host = host;
-        return this;
-    }
-
-    public RestRequestBuilder path(final String path) {
+    public HttpUriRequestBuilder path(final String path) {
         this.path = path;
         return this;
     }
 
-    public RestRequestBuilder jsonPayload(final Optional<String> jsonPayload) {
+    public HttpUriRequestBuilder jsonPayload(final Optional<String> jsonPayload) {
         this.jsonPayload = jsonPayload;
         return this;
     }
 
-    public RestRequestBuilder parameters(final Map<String, String> parameters) {
+    public HttpUriRequestBuilder parameters(final Map<String, String> parameters) {
         this.parameters.clear();
         this.parameters.putAll(parameters);
         return this;
     }
 
-    public HttpUriRequest build() throws CloudstackRESTException {
+    public HttpUriRequest build() {
         validate();
         final RequestBuilder builder = RequestBuilder.create(method.toString()).setUri(buildUri());
         if (jsonPayload.isPresent()) {
             builder.addHeader(new BasicHeader(CONTENT_TYPE, JSON_CONTENT_TYPE))
-                   .setEntity(new StringEntity(jsonPayload.get(), ContentType.create(JSON_CONTENT_TYPE, Consts.UTF_8)));
+                .setEntity(new StringEntity(jsonPayload.get(), ContentType.create(JSON_CONTENT_TYPE, Consts.UTF_8)));
         }
         return builder.build();
     }
 
     private void validate() {
-        Assert.notNull(method);
-        Assert.hasText(host);
-        Assert.hasText(path);
-        Assert.isTrue(path.startsWith("/"));
+        Assert.notNull(method, "HTTP Method cannot be null");
+        Assert.hasText(path, "target path must be defined");
+        Assert.isTrue(path.startsWith("/"), "targte path must start with a '/' character");
     }
 
-    private URI buildUri() throws CloudstackRESTException {
+    private URI buildUri() {
         try {
-            final URIBuilder builder = new URIBuilder().setScheme(HTTPS).setHost(host).setPath(path);
+            final URIBuilder builder = new URIBuilder().setPath(path);
             for (final Map.Entry<String, String> entry : parameters.entrySet()) {
                 builder.addParameter(entry.getKey(), entry.getValue());
             }
             return builder.build();
         } catch (final URISyntaxException e) {
-            throw new CloudstackRESTException("Unable to build REST Service URI", e);
+            throw new IllegalArgumentException("Unable to build REST Service URI", e);
         }
     }
 }

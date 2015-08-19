@@ -72,6 +72,17 @@ public class HttpStatusCodeHelperTest {
     }
 
     @Test
+    public void testIsNotUnauthorized() throws Exception {
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_TEMPORARY_REDIRECT), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_BAD_REQUEST), equalTo(true));
+
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_UNAUTHORIZED), equalTo(false));
+
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_PAYMENT_REQUIRED), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_FORBIDDEN), equalTo(true));
+    }
+
+    @Test
     public void testIsOk() throws Exception {
         assertThat(HttpStatusCodeHelper.isOk(HttpStatus.SC_SWITCHING_PROTOCOLS), equalTo(false));
         assertThat(HttpStatusCodeHelper.isOk(HttpStatus.SC_PROCESSING), equalTo(false));

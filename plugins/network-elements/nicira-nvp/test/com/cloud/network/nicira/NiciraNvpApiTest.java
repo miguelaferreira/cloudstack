@@ -23,7 +23,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,15 +44,27 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.http.HttpHost;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicStatusLine;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.cloud.utils.rest.HttpClientHelper;
+
 public class NiciraNvpApiTest {
+    private static final StatusLine HTTP_200_REPSONSE = new BasicStatusLine(new ProtocolVersion("HTTPS", 1, 1), HttpStatus.SC_OK, "OK");
+
     protected static final String UUID = "aaaa";
     protected static final String UUID2 = "bbbb";
-    protected static final String UUID_SEC_PROFILE_URI = NiciraNvpApi.SEC_PROFILE_URI_PREFIX + "/aaaa";
+    protected static final String UUID_SEC_PROFILE_URI = NiciraConstants.SEC_PROFILE_URI_PREFIX + "/aaaa";
     protected static final String SCHEMA = "myTestSchema";
     protected static final String SCHEMA2 = "myTestSchema2";
     protected static final String HREF = "myTestHref";
@@ -71,52 +85,54 @@ public class NiciraNvpApiTest {
                     + "\"schema\" : \"myTestSchema2\"}],"
                     + "\"result_count\": 2}";
 
-    NiciraNvpApi api;
     HttpClient client = mock(HttpClient.class);
     HttpMethod method;
     String type;
     String uri;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         final HttpClientParams hmp = mock(HttpClientParams.class);
         when(client.getParams()).thenReturn(hmp);
-        api = new NiciraNvpApi("localhost", "admin", "adminpass");
+    }
+
+    private static NiciraNvpApi buildApi(final CloseableHttpClient httpClient) {
+        return NiciraNvpApi.create()
+            .host("localhost")
+            .username("admin")
+            .password("adminpassword")
+            .httpClient(httpClient)
+            .build();
     }
 
     @Test
-    public void testFindSecurityProfile() throws NiciraNvpApiException, IOException {
-        // Prepare
-        method = mock(GetMethod.class);
+    public void testFindSecurityProfile() throws Exception {
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_REPSONSE);
+        when(response.getEntity()).thenReturn(new StringEntity(SEC_PROFILE_LIST_JSON_RESPONSE));
+        final CloseableHttpClient httpClient = spy(HttpClientHelper.createHttpClient(2));
+        doReturn(response).when(httpClient).execute((HttpHost) any(), (HttpUriRequest) any());
+        final NiciraNvpApi api = buildApi(httpClient);
+
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
         when(method.getResponseBodyAsString()).thenReturn(SEC_PROFILE_LIST_JSON_RESPONSE);
-        final NameValuePair[] queryString = new NameValuePair[] {
-                        new NameValuePair("fields", "*") };
+        final NameValuePair[] queryString = new NameValuePair[] { new NameValuePair("fields", "*") };
 
         // Execute
         final NiciraNvpList<SecurityProfile> actualProfiles = api.findSecurityProfile();
 
         // Assert
-        verify(method, times(1)).releaseConnection();
+        verify(response, times(1)).close();
         verify(method, times(1)).setQueryString(queryString);
-        assertEquals("Wrong Uuid in the newly created SecurityProfile",
-                        UUID, actualProfiles.getResults().get(0).getUuid());
-        assertEquals("Wrong Uuid in the newly created SecurityProfile",
-                        HREF, actualProfiles.getResults().get(0).getHref());
-        assertEquals("Wrong Schema in the newly created SecurityProfile",
-                        SCHEMA, actualProfiles.getResults().get(0).getSchema());
-        assertEquals("Wrong Uuid in the newly created SecurityProfile",
-                        UUID2, actualProfiles.getResults().get(1).getUuid());
-        assertEquals("Wrong Uuid in the newly created SecurityProfile",
-                        HREF2, actualProfiles.getResults().get(1).getHref());
-        assertEquals("Wrong Schema in the newly created SecurityProfile",
-                        SCHEMA2, actualProfiles.getResults().get(1).getSchema());
-        assertEquals("Wrong Schema in the newly created SecurityProfile",
-                        2, actualProfiles.getResultCount());
-        assertEquals("Wrong URI for SecurityProfile creation REST service",
-                        NiciraNvpApi.SEC_PROFILE_URI_PREFIX, uri);
-        assertEquals("Wrong URI for SecurityProfile creation REST service",
-                        NiciraNvpApi.GET_METHOD_TYPE, type);
+        assertEquals("Wrong Uuid in the newly created SecurityProfile", UUID, actualProfiles.getResults().get(0).getUuid());
+        assertEquals("Wrong Uuid in the newly created SecurityProfile", HREF, actualProfiles.getResults().get(0).getHref());
+        assertEquals("Wrong Schema in the newly created SecurityProfile", SCHEMA, actualProfiles.getResults().get(0).getSchema());
+        assertEquals("Wrong Uuid in the newly created SecurityProfile", UUID2, actualProfiles.getResults().get(1).getUuid());
+        assertEquals("Wrong Uuid in the newly created SecurityProfile", HREF2, actualProfiles.getResults().get(1).getHref());
+        assertEquals("Wrong Schema in the newly created SecurityProfile", SCHEMA2, actualProfiles.getResults().get(1).getSchema());
+        assertEquals("Wrong Schema in the newly created SecurityProfile", 2, actualProfiles.getResultCount());
+        assertEquals("Wrong URI for SecurityProfile creation REST service", NiciraConstants.SEC_PROFILE_URI_PREFIX, uri);
+        assertEquals("Wrong URI for SecurityProfile creation REST service", com.cloud.utils.rest.HttpMethod.GET, type);
     }
 
     @Test
@@ -139,6 +155,7 @@ public class NiciraNvpApiTest {
                 return null;
             }
         }).when(method).setQueryString(any(NameValuePair[].class));
+        final NiciraNvpApi api = buildApi(httpClient);
 
         // Execute
         final NiciraNvpList<SecurityProfile> actualProfiles = api.findSecurityProfile(UUID);
@@ -162,9 +179,9 @@ public class NiciraNvpApiTest {
         assertEquals("Wrong Schema in the newly created SecurityProfile",
                         2, actualProfiles.getResultCount());
         assertEquals("Wrong URI for SecurityProfile creation REST service",
-                        NiciraNvpApi.SEC_PROFILE_URI_PREFIX, uri);
+                        NiciraConstants.SEC_PROFILE_URI_PREFIX, uri);
         assertEquals("Wrong HTTP method for SecurityProfile creation REST service",
-                        NiciraNvpApi.GET_METHOD_TYPE, type);
+                        com.cloud.utils.rest.HttpMethod.GET, type);
     }
 
     @Test
@@ -187,9 +204,9 @@ public class NiciraNvpApiTest {
         assertEquals("Wrong Schema in the newly created SecurityProfile",
                         SCHEMA, actualSecProfile.getSchema());
         assertEquals("Wrong URI for SecurityProfile creation REST service",
-                        NiciraNvpApi.SEC_PROFILE_URI_PREFIX, uri);
+                        NiciraConstants.SEC_PROFILE_URI_PREFIX, uri);
         assertEquals("Wrong HTTP method for SecurityProfile creation REST service",
-                        NiciraNvpApi.POST_METHOD_TYPE, type);
+                        com.cloud.utils.rest.HttpMethod.POST, type);
     }
 
     @Test
@@ -207,7 +224,7 @@ public class NiciraNvpApiTest {
         assertEquals("Wrong URI for SecurityProfile creation REST service",
                         UUID_SEC_PROFILE_URI, uri);
         assertEquals("Wrong HTTP method for SecurityProfile creation REST service",
-                        NiciraNvpApi.PUT_METHOD_TYPE, type);
+                        com.cloud.utils.rest.HttpMethod.PUT, type);
     }
 
     @Test
@@ -222,7 +239,7 @@ public class NiciraNvpApiTest {
         // Assert
         verify(method, times(1)).releaseConnection();
         assertEquals("Wrong URI for SecurityProfile deletion REST service", UUID_SEC_PROFILE_URI, uri);
-        assertEquals("Wrong HTTP method for SecurityProfile deletion REST service", NiciraNvpApi.DELETE_METHOD_TYPE, type);
+        assertEquals("Wrong HTTP method for SecurityProfile deletion REST service", com.cloud.utils.rest.HttpMethod.DELETE, type);
     }
 
     // @Test(expected = JsonParseException.class)

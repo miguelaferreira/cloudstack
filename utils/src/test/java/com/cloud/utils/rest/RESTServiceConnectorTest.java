@@ -24,13 +24,19 @@ import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicStatusLine;
 import org.junit.Test;
 
 import com.google.gson.FieldNamingPolicy;
@@ -38,16 +44,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class RESTServiceConnectorTest {
-    final Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testBuildConnectorWithNullHostname() {
-        new RESTServiceConnector.Builder().build();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testBuildConnectorWithEmptyHostname() {
-        new RESTServiceConnector.Builder().host("").build();
+    private static final BasicStatusLine HTTP_200_STATUS_LINE = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
+    private static final Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+    private static final Map<String, String> DEFAULT_TEST_PARAMETERS = new HashMap<String, String>();
+    static {
+        DEFAULT_TEST_PARAMETERS.put("agr1", "val1");
+        DEFAULT_TEST_PARAMETERS.put("agr2", "val2");
     }
 
     @Test
@@ -55,11 +57,37 @@ public class RESTServiceConnectorTest {
         final TestPojo newObject = new TestPojo();
         newObject.setField("newValue");
         final String newObjectJson = gson.toJson(newObject);
-        final RestClient client = mock(RestClient.class, withSettings().verboseLogging());
-        final RESTServiceConnector connector = new RESTServiceConnector.Builder().host("localhost").client(client).build();
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
         connector.executeUpdateObject(newObject, "/somepath");
-        verify(client).executeRequest(argThat(HttpRequestMatcher.matchesHttpRequest("PUT", newObjectJson)));
+
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("PUT")));
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestPayloadMatcher.hasPayload(newObjectJson)));
+    }
+
+    @Test
+    public void testExecuteUpdateObjectWithParameters() throws Exception {
+        final TestPojo newObject = new TestPojo();
+        newObject.setField("newValue");
+        final String newObjectJson = gson.toJson(newObject);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        connector.executeUpdateObject(newObject, "/somepath", DEFAULT_TEST_PARAMETERS);
+
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("PUT")));
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestPayloadMatcher.hasPayload(newObjectJson)));
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1")));
     }
 
     @Test
@@ -69,34 +97,94 @@ public class RESTServiceConnectorTest {
         final String newObjectJson = gson.toJson(newObject);
         final HttpEntity entity = mock(HttpEntity.class);
         when(entity.getContent()).thenReturn(new ByteArrayInputStream(newObjectJson.getBytes(StandardCharsets.UTF_8)));
-        final RestClient client = mock(RestClient.class, withSettings().verboseLogging());
-        when(client.executeRequest((HttpUriRequest) any())).thenReturn(entity);
-        final RESTServiceConnector connector = new RESTServiceConnector.Builder().host("localhost").client(client).build();
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(entity);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
         connector.executeCreateObject(newObject, "/somepath");
-        verify(client).executeRequest(argThat(HttpRequestMatcher.matchesHttpRequest("POST", newObjectJson)));
+
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("POST")));
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestPayloadMatcher.hasPayload(newObjectJson)));
+        verify(response).close();
+    }
+
+    @Test
+    public void testExecuteCreateObjectWithParameters() throws Exception {
+        final TestPojo newObject = new TestPojo();
+        newObject.setField("newValue");
+        final String newObjectJson = gson.toJson(newObject);
+        final HttpEntity entity = mock(HttpEntity.class);
+        when(entity.getContent()).thenReturn(new ByteArrayInputStream(newObjectJson.getBytes(StandardCharsets.UTF_8)));
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(entity);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        connector.executeCreateObject(newObject, "/somepath", DEFAULT_TEST_PARAMETERS);
+
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("POST")));
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestPayloadMatcher.hasPayload(newObjectJson)));
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1")));
+        verify(response).close();
     }
 
     @Test
     public void testExecuteDeleteObject() throws Exception {
         final HttpEntity entity = mock(HttpEntity.class);
-        final RestClient client = mock(RestClient.class, withSettings().verboseLogging());
-        when(client.executeRequest((HttpUriRequest) any())).thenReturn(entity);
-        final RESTServiceConnector connector = new RESTServiceConnector.Builder().host("localhost").client(client).build();
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(entity);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
         connector.executeDeleteObject("/somepath");
-        verify(client).executeRequest(argThat(HttpRequestMatcher.matchesHttpRequest("DELETE")));
+
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("DELETE")));
+        verify(response).close();
     }
 
     @Test
     public void testExecuteRetrieveObject() throws Exception {
         final HttpEntity entity = mock(HttpEntity.class);
-        final RestClient client = mock(RestClient.class, withSettings().verboseLogging());
-        when(client.executeRequest((HttpUriRequest) any())).thenReturn(entity);
-        final RESTServiceConnector connector = new RESTServiceConnector.Builder().host("localhost").client(client).build();
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(entity);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
         connector.executeRetrieveObject(TestPojo.class, "/somepath");
-        verify(client).executeRequest(argThat(HttpRequestMatcher.matchesHttpRequest("GET")));
+
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("GET")));
+        verify(response).close();
+    }
+
+    @Test
+    public void testExecuteRetrieveObjectWithParameters() throws Exception {
+        final HttpEntity entity = mock(HttpEntity.class);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(entity);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        connector.executeRetrieveObject(TestPojo.class, "/somepath", DEFAULT_TEST_PARAMETERS);
+
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("GET")));
+        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1")));
+        verify(response).close();
     }
 
     class TestPojo {

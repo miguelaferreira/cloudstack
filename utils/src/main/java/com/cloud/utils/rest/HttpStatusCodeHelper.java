@@ -19,6 +19,10 @@ public class HttpStatusCodeHelper {
         return statusCode == HttpStatus.SC_UNAUTHORIZED;
     }
 
+    public static boolean isNotUnauthorized(final int statusCode) {
+        return !isUnauthorized(statusCode);
+    }
+
     public static boolean isOk(final int statusCode) {
         return statusCode == HttpStatus.SC_OK;
     }

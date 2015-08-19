@@ -1,74 +1,122 @@
 package com.cloud.utils.rest;
 
+import static org.mockito.Matchers.argThat;
+
 import java.io.IOException;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpRequest;
 import org.apache.http.ParseException;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.util.EntityUtils;
-import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.hamcrest.SelfDescribing;
+import org.mockito.ArgumentMatcher;
 
-final class HttpRequestMatcher extends BaseMatcher<HttpUriRequest> {
+public class HttpRequestMatcher extends ArgumentMatcher<HttpRequest> {
+    private final HttpRequest wanted;
 
-    public static HttpRequestMatcher matchesHttpRequest(final String method, final String payloadContent) {
-        return new HttpRequestMatcher(method, payloadContent);
+    public HttpRequestMatcher(final HttpRequest wanted) {
+        this.wanted = wanted;
     }
 
-    public static HttpRequestMatcher matchesHttpRequest(final String method) {
-        return new HttpRequestMatcher(method, null);
-    }
-
-    private final String method;
-    private final String payloadContent;
-
-    private String actualMethod;
-    private String actualPayloadContent;
-
-    private HttpRequestMatcher(final String method, final String payloadContent) {
-        this.method = method;
-        this.payloadContent = payloadContent;
+    public static HttpRequest eq(final HttpRequest request) {
+        return argThat(new HttpRequestMatcher(request));
     }
 
     @Override
-    public boolean matches(final Object item) {
-        actualMethod = getMethod(item);
-        if (item instanceof HttpEntityEnclosingRequest) {
-            actualPayloadContent = getPayloadContent(item);
-        }
-        final boolean methodMatchCheck = actualMethod.equals(method);
-        final boolean payloadContentMatchCheck = checkPayloadContent();
-        System.err.println("methodMatchCheck = " + methodMatchCheck);
-        System.err.println("payloadContentMatchCheck = " + payloadContentMatchCheck);
-        return methodMatchCheck && payloadContentMatchCheck;
-    }
-
-    private static String getMethod(final Object item) {
-        return ((HttpUriRequest) item).getMethod();
-    }
-
-    private static String getPayloadContent(final Object item) {
-        try {
-            return EntityUtils.toString(((HttpEntityEnclosingRequest) item).getEntity());
-        } catch (ParseException | IOException e) {
-            throw new RuntimeException(e);
+    public boolean matches(final Object actual) {
+        if (actual instanceof HttpUriRequest) {
+            final HttpUriRequest converted = (HttpUriRequest) actual;
+            return checkMethod(converted) && checkUri(converted) && checkPayload(converted);
+        } else {
+            return wanted == actual;
         }
     }
 
-    private boolean checkPayloadContent() {
-        return payloadContent != null ? payloadContent.equals(actualPayloadContent) : true;
+    private boolean checkPayload(final HttpUriRequest actual) {
+        final String wantedPayload = getPayload(wanted);
+        final String actualPayload = getPayload(actual);
+        return equalsString(wantedPayload, actualPayload);
+    }
+
+    private static String getPayload(final HttpRequest request) {
+        String payload = "";
+        if (request instanceof HttpEntityEnclosingRequest) {
+            try {
+                payload = EntityUtils.toString(((HttpEntityEnclosingRequest) request).getEntity());
+            } catch (final ParseException e) {
+                throw new IllegalArgumentException("Couldn't read request's entity payload.", e);
+            } catch (final IOException e) {
+                throw new IllegalArgumentException("Couldn't read request's entity payload.", e);
+            }
+        }
+        return payload;
+    }
+
+    private boolean checkUri(final HttpUriRequest actual) {
+        if (wanted instanceof HttpUriRequest) {
+            final String wantedQuery = ((HttpUriRequest) wanted).getURI().getQuery();
+            final String actualQuery = actual.getURI().getQuery();
+            return equalsString(wantedQuery, actualQuery);
+        } else {
+            return wanted == actual;
+        }
+    }
+
+    private boolean checkMethod(final HttpUriRequest actual) {
+        if (wanted instanceof HttpUriRequest) {
+            final String wantedMethod = ((HttpUriRequest) wanted).getMethod();
+            final String actualMethod = actual.getMethod();
+            return equalsString(wantedMethod, actualMethod);
+        } else {
+            return wanted == actual;
+        }
+    }
+
+    private static boolean equalsString(final String a, final String b) {
+        return a == b || a != null && a.equals(b);
     }
 
     @Override
     public void describeTo(final Description description) {
-        description.appendText(createMessage());
+        description.appendText(describe(wanted));
     }
 
-    private String createMessage() {
+    public String describe(final HttpRequest object) {
         final StringBuilder sb = new StringBuilder();
-        sb.append("expected\nmethod = ").append(method).append(" and payload content = ").append(payloadContent);
-        sb.append("\n    but got\nmethod = ").append(actualMethod).append(" and payload content = ").append(actualPayloadContent);
+        if (object instanceof HttpUriRequest) {
+            final HttpUriRequest converted = (HttpUriRequest) object;
+            sb.append("method = ").append(converted.getMethod());
+            sb.append(", query = ").append(converted.getURI().getQuery());
+            sb.append(", payload = ").append(getPayload(object));
+        }
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        return EqualsBuilder.reflectionEquals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCodeBuilder.reflectionHashCode(this);
+    }
+
+    public SelfDescribing withExtraTypeInfo() {
+        return new SelfDescribing() {
+            @Override
+            public void describeTo(final Description description) {
+                description.appendText("(" + wanted.getClass().getSimpleName() + ") ").appendText(describe(wanted));
+            }
+        };
+    }
+
+    public boolean typeMatches(final Object object) {
+        return wanted != null && object != null && object.getClass() == wanted.getClass();
     }
 
 }

@@ -22,7 +22,6 @@ package com.cloud.network.nicira;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -39,13 +38,16 @@ public class NiciraNvpApiIT {
     protected long timestamp = System.currentTimeMillis();
 
     @Before
-    public void setup() throws IOException {
+    public void setup() throws Exception {
         PropertiesUtil.loadFromFile(PropertiesUtil.findConfigFile("config.properties"));
-        api = new NiciraNvpApi("nvp.host", "nvp.admin.user", "nvp.admin.pwd");
+        final String host = System.getProperty("nvp.host");
+        final String user = System.getProperty("nvp.admin.user");
+        final String pass = System.getProperty("nvp.admin.pwd");
+        api = new NiciraNvpApi(host, user, pass);
     }
 
     @Test
-    public void testCRUDSecurityProfile() throws NiciraNvpApiException {
+    public void testCRUDSecurityProfile() {
         SecurityProfile sProfile = new SecurityProfile();
         sProfile.setDisplayName("SecProfile" + timestamp);
 

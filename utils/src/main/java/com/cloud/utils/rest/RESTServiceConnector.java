@@ -25,17 +25,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
-import org.springframework.util.Assert;
 
 import com.google.common.base.Optional;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * This abstraction encapsulates client side code for REST service communication. It encapsulates access in a delegate validation strategy. There may different implementations
@@ -51,12 +50,22 @@ public class RESTServiceConnector {
 
     private final RestClient client;
     private final Gson gson;
-    private final String host;
 
     private RESTServiceConnector(final Builder builder) {
-        host = builder.host;
         client = builder.client;
-        gson = setUpGsonDeserialization(builder.classToDeserializerMap);
+        gson = setGsonDeserializer(builder.classToDeserializerMap);
+    }
+
+    private static Gson setGsonDeserializer(final Map<Class<?>, JsonDeserializer<?>> classToDeserializerMap) {
+        final GsonBuilder gsonBuilder = new GsonBuilder();
+        for (final Map.Entry<Class<?>, JsonDeserializer<?>> entry : classToDeserializerMap.entrySet()) {
+            gsonBuilder.registerTypeAdapter(entry.getKey(), entry.getValue());
+        }
+        return gsonBuilder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+    }
+
+    public static Builder create() {
+        return new Builder();
     }
 
     public <T> void executeUpdateObject(final T newObject, final String path, final Map<String, String> parameters) throws CloudstackRESTException {
@@ -68,10 +77,11 @@ public class RESTServiceConnector {
         executeUpdateObject(newObject, path, new HashMap<String, String>());
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T executeCreateObject(final T newObject, final String path, final Map<String, String> parameters) throws CloudstackRESTException {
         s_logger.debug("Executing create object on " + path);
         final HttpEntity entity = createAndExecuteRequest(HttpMethod.POST, path, parameters, Optional.fromNullable(gson.toJson(newObject)));
-        return readResponseBody(entity, newObject);
+        return (T) readResponseBody(entity, newObject.getClass());
     }
 
     public <T> T executeCreateObject(final T newObject, final String uri) throws CloudstackRESTException {
@@ -89,41 +99,41 @@ public class RESTServiceConnector {
         return readResponseBody(entity, returnObjectType);
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T executeRetrieveObject(final Type returnObjectType, final String path) throws CloudstackRESTException {
-        return executeRetrieveObject(returnObjectType, path, new HashMap<String, String>());
-    }
-
-    private static Gson setUpGsonDeserialization(final Map<Class<?>, JsonDeserializer<?>> classToDeserializerMap) {
-        final GsonBuilder gsonBuilder = new GsonBuilder();
-        for (final Map.Entry<Class<?>, JsonDeserializer<?>> entry : classToDeserializerMap.entrySet()) {
-            gsonBuilder.registerTypeAdapter(entry.getKey(), entry.getValue());
-        }
-        return gsonBuilder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+        return (T) executeRetrieveObject(returnObjectType, path, new HashMap<String, String>());
     }
 
     private HttpEntity createAndExecuteRequest(final HttpMethod method, final String path, final Map<String, String> parameters, final Optional<String> jsonPayLoad)
                     throws CloudstackRESTException {
-        final HttpUriRequest httpRequest = new RestRequestBuilder()
-            .host(host)
+        final HttpUriRequest httpRequest = HttpUriRequestBuilder.create()
             .path(path)
             .parameters(parameters)
             .jsonPayload(jsonPayLoad)
             .method(method)
             .build();
         s_logger.debug("Built request: " + httpRequest);
-        return client.executeRequest(httpRequest);
+        return executeRequest(httpRequest);
     }
 
-    private <T> T readResponseBody(final HttpEntity entity, final T newObject) throws CloudstackRESTException {
-        return readResponseBody(entity, TypeToken.get(newObject.getClass()).getType());
+    private HttpEntity executeRequest(final HttpUriRequest httpRequest) throws CloudstackRESTException {
+        CloseableHttpResponse response = null;
+        try {
+            response = client.execute(httpRequest);
+            s_logger.debug("Executed request: " + httpRequest + " status was " + response.getStatusLine().toString());
+            return response.getEntity();
+        } finally {
+            if (response != null) {
+                client.closeResponse(httpRequest, response);
+            }
+        }
     }
 
-    @SuppressWarnings("unchecked")
     private <T> T readResponseBody(final HttpEntity entity, final Type type) throws CloudstackRESTException {
         try {
             final String stringEntity = EntityUtils.toString(entity);
             s_logger.debug("Response entity: " + stringEntity);
-            return (T) gson.fromJson(stringEntity, type);
+            return gson.fromJson(stringEntity, type);
         } catch (final IOException e) {
             throw new CloudstackRESTException("Could not deserialize response to JSON. Entity: " + entity, e);
         }
@@ -131,16 +141,10 @@ public class RESTServiceConnector {
 
     public static class Builder {
         private RestClient client;
-        private String host;
         final private Map<Class<?>, JsonDeserializer<?>> classToDeserializerMap = new HashMap<Class<?>, JsonDeserializer<?>>();
 
         public Builder client(final RestClient client) {
             this.client = client;
-            return this;
-        }
-
-        public Builder host(final String host) {
-            this.host = host;
             return this;
         }
 
@@ -156,7 +160,6 @@ public class RESTServiceConnector {
         }
 
         public RESTServiceConnector build() {
-            Assert.hasText(host, "Cannot build a RESTServiceConnector without a host.");
             return new RESTServiceConnector(this);
         }
     }
