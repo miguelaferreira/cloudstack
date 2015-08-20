@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -66,7 +67,9 @@ public class NiciraRestClient extends BasicRestClient {
         s_logger.debug("Executing request " + request + " [execution count = " + counter.getValue() + "]");
         final CloseableHttpResponse response = super.execute(request);
 
-        final int statusCode = response.getStatusLine().getStatusCode();
+        final StatusLine statusLine = response.getStatusLine();
+        final int statusCode = statusLine.getStatusCode();
+        s_logger.debug("Status of last request: " + statusLine.toString());
         if (HttpStatusCodeHelper.isUnauthorized(statusCode)) {
             if (HttpStatusCodeHelper.isUnauthorized(previousStatusCode)) {
                 s_logger.error(responseToErrorMessage(response));
@@ -74,14 +77,16 @@ public class NiciraRestClient extends BasicRestClient {
             }
             final HttpUriRequest authenticateRequest = createAuthenticationRequest();
             final CloseableHttpResponse loginResponse = execute(authenticateRequest, statusCode);
-            return execute(request, loginResponse.getStatusLine().getStatusCode());
+            final int loginStatusCode = loginResponse.getStatusLine().getStatusCode();
+            super.closeResponse(response);
+            return execute(request, loginStatusCode);
         } else if (HttpStatusCodeHelper.isRedirect(statusCode)) {
             if (HttpStatusCodeHelper.isRedirect(previousStatusCode)) {
                 s_logger.warn("Got two consecutive redirects for request: " + request);
             }
             redirectClientToNewHost(response);
             return execute(request, statusCode);
-        } else if (HttpStatusCodeHelper.isOk(statusCode)) {
+        } else if (HttpStatusCodeHelper.isSuccess(statusCode)) {
             s_logger.info("Successfuly executed request: " + request);
             counter.resetExecutionCounter();
             return response;
@@ -102,7 +107,7 @@ public class NiciraRestClient extends BasicRestClient {
         parameters.put("password", password);
         return HttpUriRequestBuilder.create()
             .method(HttpMethod.POST)
-            .parameters(parameters)
+            .methodParameters(parameters)
             .path(loginUrl)
             .build();
     }

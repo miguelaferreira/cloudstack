@@ -70,7 +70,7 @@ public class RESTServiceConnector {
 
     public <T> void executeUpdateObject(final T newObject, final String path, final Map<String, String> parameters) throws CloudstackRESTException {
         s_logger.debug("Executing update object on " + path);
-        createAndExecuteRequest(HttpMethod.PUT, path, parameters, Optional.fromNullable(gson.toJson(newObject)));
+        client.closeResponse(createAndExecuteRequest(HttpMethod.PUT, path, parameters, Optional.fromNullable(gson.toJson(newObject))));
     }
 
     public <T> void executeUpdateObject(final T newObject, final String path) throws CloudstackRESTException {
@@ -80,8 +80,8 @@ public class RESTServiceConnector {
     @SuppressWarnings("unchecked")
     public <T> T executeCreateObject(final T newObject, final String path, final Map<String, String> parameters) throws CloudstackRESTException {
         s_logger.debug("Executing create object on " + path);
-        final HttpEntity entity = createAndExecuteRequest(HttpMethod.POST, path, parameters, Optional.fromNullable(gson.toJson(newObject)));
-        return (T) readResponseBody(entity, newObject.getClass());
+        final CloseableHttpResponse response = createAndExecuteRequest(HttpMethod.POST, path, parameters, Optional.fromNullable(gson.toJson(newObject)));
+        return (T) readResponseBody(response, newObject.getClass());
     }
 
     public <T> T executeCreateObject(final T newObject, final String uri) throws CloudstackRESTException {
@@ -90,21 +90,20 @@ public class RESTServiceConnector {
 
     public void executeDeleteObject(final String path) throws CloudstackRESTException {
         s_logger.debug("Executing delete object on " + path);
-        createAndExecuteRequest(HttpMethod.DELETE, path, new HashMap<String, String>(), ABSENT);
+        client.closeResponse(createAndExecuteRequest(HttpMethod.DELETE, path, new HashMap<String, String>(), ABSENT));
     }
 
     public <T> T executeRetrieveObject(final Type returnObjectType, final String path, final Map<String, String> parameters) throws CloudstackRESTException {
         s_logger.debug("Executing retrieve object on " + path);
-        final HttpEntity entity = createAndExecuteRequest(HttpMethod.GET, path, parameters, ABSENT);
-        return readResponseBody(entity, returnObjectType);
+        final CloseableHttpResponse response = createAndExecuteRequest(HttpMethod.GET, path, parameters, ABSENT);
+        return readResponseBody(response, returnObjectType);
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T executeRetrieveObject(final Type returnObjectType, final String path) throws CloudstackRESTException {
-        return (T) executeRetrieveObject(returnObjectType, path, new HashMap<String, String>());
+        return executeRetrieveObject(returnObjectType, path, new HashMap<String, String>());
     }
 
-    private HttpEntity createAndExecuteRequest(final HttpMethod method, final String path, final Map<String, String> parameters, final Optional<String> jsonPayLoad)
+    private CloseableHttpResponse createAndExecuteRequest(final HttpMethod method, final String path, final Map<String, String> parameters, final Optional<String> jsonPayLoad)
                     throws CloudstackRESTException {
         final HttpUriRequest httpRequest = HttpUriRequestBuilder.create()
             .path(path)
@@ -112,31 +111,28 @@ public class RESTServiceConnector {
             .jsonPayload(jsonPayLoad)
             .method(method)
             .build();
-        s_logger.debug("Built request: " + httpRequest);
+        s_logger.debug("Built request: " + httpRequest + " with payload " + jsonPayLoad);
         return executeRequest(httpRequest);
     }
 
-    private HttpEntity executeRequest(final HttpUriRequest httpRequest) throws CloudstackRESTException {
-        CloseableHttpResponse response = null;
-        try {
-            response = client.execute(httpRequest);
-            s_logger.debug("Executed request: " + httpRequest + " status was " + response.getStatusLine().toString());
-            return response.getEntity();
-        } finally {
-            if (response != null) {
-                client.closeResponse(httpRequest, response);
-            }
-        }
+    private CloseableHttpResponse executeRequest(final HttpUriRequest httpRequest) throws CloudstackRESTException {
+        final CloseableHttpResponse response = client.execute(httpRequest);
+        s_logger.debug("Executed request: " + httpRequest + " status was " + response.getStatusLine().toString());
+        return response;
     }
 
-    private <T> T readResponseBody(final HttpEntity entity, final Type type) throws CloudstackRESTException {
+    private <T> T readResponseBody(final CloseableHttpResponse response, final Type type) throws CloudstackRESTException {
+        final HttpEntity entity = response.getEntity();
         try {
             final String stringEntity = EntityUtils.toString(entity);
             s_logger.debug("Response entity: " + stringEntity);
             return gson.fromJson(stringEntity, type);
         } catch (final IOException e) {
             throw new CloudstackRESTException("Could not deserialize response to JSON. Entity: " + entity, e);
+        } finally {
+            client.closeResponse(response);
         }
+
     }
 
     public static class Builder {

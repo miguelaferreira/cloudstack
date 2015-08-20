@@ -22,6 +22,7 @@ package com.cloud.network.nicira;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,11 +31,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import com.cloud.utils.rest.CloudstackRESTException;
 import com.cloud.utils.rest.RESTServiceConnector;
 import com.google.common.base.Optional;
-import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 @SuppressWarnings("rawtypes")
@@ -151,8 +148,9 @@ public class NiciraNvpApi {
      */
     public <T> NiciraNvpList<T> find(final Optional<String> uuid, final Class<T> clazz) throws NiciraNvpApiException {
         final String uri = prefixMap.get(clazz);
-        final Map<String, String> params = new HashMap<String, String>(defaultListParams);
+        Map<String, String> params = defaultListParams;
         if (uuid.isPresent()) {
+            params = new HashMap<String, String>(defaultListParams);
             params.put("uuid", uuid.get());
         }
 
@@ -239,8 +237,8 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<SecurityProfile> findSecurityProfile() throws NiciraNvpApiException {
-        return find(ABSENT, SecurityProfile.class);
+    public List<SecurityProfile> findSecurityProfile() throws NiciraNvpApiException {
+        return find(ABSENT, SecurityProfile.class).getResults();
     }
 
     /**
@@ -252,8 +250,8 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<SecurityProfile> findSecurityProfile(final String uuid) throws NiciraNvpApiException {
-        return find(Optional.fromNullable(uuid), SecurityProfile.class);
+    public List<SecurityProfile> findSecurityProfile(final String uuid) throws NiciraNvpApiException {
+        return find(Optional.fromNullable(uuid), SecurityProfile.class).getResults();
     }
 
     /**
@@ -294,8 +292,8 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<Acl> findAcl() throws NiciraNvpApiException {
-        return findAcl(ABSENT);
+    public List<Acl> findAcl() throws NiciraNvpApiException {
+        return findAcl(null);
     }
 
     /**
@@ -305,8 +303,8 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<Acl> findAcl(final Optional<String> uuid) throws NiciraNvpApiException {
-        return find(uuid, Acl.class);
+    public List<Acl> findAcl(final String uuid) throws NiciraNvpApiException {
+        return find(Optional.fromNullable(uuid), Acl.class).getResults();
     }
 
     /**
@@ -340,8 +338,8 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<LogicalSwitch> findLogicalSwitch() throws NiciraNvpApiException {
-        return findLogicalSwitch(ABSENT);
+    public List<LogicalSwitch> findLogicalSwitch() throws NiciraNvpApiException {
+        return findLogicalSwitch(null);
     }
 
     /**
@@ -351,8 +349,8 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<LogicalSwitch> findLogicalSwitch(final Optional<String> uuid) throws NiciraNvpApiException {
-        return find(uuid, LogicalSwitch.class);
+    public List<LogicalSwitch> findLogicalSwitch(final String uuid) throws NiciraNvpApiException {
+        return find(Optional.fromNullable(uuid), LogicalSwitch.class).getResults();
     }
 
     /**
@@ -396,75 +394,62 @@ public class NiciraNvpApi {
         params.put("attachment_vif_uuid", vifAttachmentUuid);
         params.put("fields", "uuid");
 
-        NiciraNvpList<LogicalSwitchPort> lspl;
+        NiciraNvpList<LogicalSwitchPort> niciraList;
         try {
-            lspl = restConnector.executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>() {
-            }.getType(), uri, params);
+            final Type niciraListType = new TypeToken<NiciraNvpList<LogicalSwitchPort>>() {
+            }.getType();
+            niciraList = restConnector.executeRetrieveObject(niciraListType, uri, params);
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
 
-        if (lspl == null || lspl.getResultCount() != 1) {
+        final List<LogicalSwitchPort> lspl = niciraList.getResults();
+
+        if (lspl.size() != 1) {
             throw new NiciraNvpApiException("Unexpected response from API");
         }
 
-        final LogicalSwitchPort lsp = lspl.getResults().get(0);
+        final LogicalSwitchPort lsp = lspl.get(0);
         return lsp.getUuid();
     }
 
     public ControlClusterStatus getControlClusterStatus() throws NiciraNvpApiException {
         final String uri = "/ws.v1/control-cluster/status";
-        ControlClusterStatus ccs;
         try {
-            ccs = restConnector.executeRetrieveObject(new TypeToken<ControlClusterStatus>() {
-            }.getType(), uri, new HashMap<String, String>());
+            return restConnector.executeRetrieveObject(ControlClusterStatus.class, uri, new HashMap<String, String>());
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
-
-        return ccs;
     }
 
-    public NiciraNvpList<LogicalSwitchPort> findLogicalSwitchPortsByUuid(final String logicalSwitchUuid, final String logicalSwitchPortUuid) throws NiciraNvpApiException {
+    public List<LogicalSwitchPort> findLogicalSwitchPortsByUuid(final String logicalSwitchUuid, final String logicalSwitchPortUuid) throws NiciraNvpApiException {
         final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("uuid", logicalSwitchPortUuid);
         params.put("fields", "uuid");
 
-        NiciraNvpList<LogicalSwitchPort> lspl;
         try {
-            lspl = restConnector.executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>() {
-            }.getType(), uri, params);
+            final Type niciraListType = new TypeToken<NiciraNvpList<LogicalSwitchPort>>() {
+            }.getType();
+            return restConnector.<NiciraNvpList<LogicalSwitchPort>> executeRetrieveObject(niciraListType, uri, params).getResults();
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
-
-        if (lspl == null) {
-            throw new NiciraNvpApiException("Unexpected response from API");
-        }
-
-        return lspl;
     }
 
-    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortsByUuid(final String logicalRouterUuid, final String logicalRouterPortUuid) throws NiciraNvpApiException {
+    public List<LogicalRouterPort> findLogicalRouterPortsByUuid(final String logicalRouterUuid, final String logicalRouterPortUuid) throws NiciraNvpApiException {
         final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("uuid", logicalRouterPortUuid);
         params.put("fields", "uuid");
 
-        NiciraNvpList<LogicalRouterPort> lrpl;
         try {
-            lrpl = restConnector.executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
-            }.getType(), uri, params);
+            final Type niciraListType = new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
+            }.getType();
+            return restConnector.<NiciraNvpList<LogicalRouterPort>> executeRetrieveObject(niciraListType, uri, params).getResults();
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
-
-        if (lrpl == null) {
-            throw new NiciraNvpApiException("Unexpected response from API");
-        }
-
-        return lrpl;
     }
 
     public LogicalRouter createLogicalRouter(final LogicalRouter logicalRouter) throws NiciraNvpApiException {
@@ -477,8 +462,8 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<LogicalRouter> findLogicalRouter() throws NiciraNvpApiException {
-        return findLogicalRouter(ABSENT);
+    public List<LogicalRouter> findLogicalRouter() throws NiciraNvpApiException {
+        return findLogicalRouter(null);
     }
 
     /**
@@ -488,12 +473,12 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<LogicalRouter> findLogicalRouter(final Optional<String> uuid) throws NiciraNvpApiException {
-        return find(uuid, LogicalRouter.class);
+    public List<LogicalRouter> findLogicalRouter(final String uuid) throws NiciraNvpApiException {
+        return find(Optional.fromNullable(uuid), LogicalRouter.class).getResults();
     }
 
-    public LogicalRouter findOneLogicalRouterByUuid(final Optional<String> logicalRouterUuid) throws NiciraNvpApiException {
-        return findLogicalRouter(logicalRouterUuid).getResults().get(0);
+    public LogicalRouter findOneLogicalRouterByUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
+        return findLogicalRouter(logicalRouterUuid).get(0);
     }
 
     public void updateLogicalRouter(final LogicalRouter logicalRouter, final String logicalRouterUuid) throws NiciraNvpApiException {
@@ -540,7 +525,7 @@ public class NiciraNvpApi {
         deleteWithUri(uri);
     }
 
-    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(final String logicalRouterUuid, final String gatewayServiceUuid, final long vlanId)
+    public List<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(final String logicalRouterUuid, final String gatewayServiceUuid, final long vlanId)
                     throws NiciraNvpApiException {
         final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
@@ -549,27 +534,29 @@ public class NiciraNvpApi {
         params.put("fields", "*");
 
         try {
-            return restConnector.executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
-            }.getType(), uri, params);
+            final Type niciraListType = new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
+            }.getType();
+            return restConnector.<NiciraNvpList<LogicalRouterPort>> executeRetrieveObject(niciraListType, uri, params).getResults();
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
     }
 
-    public NiciraNvpList<NatRule> findNatRulesByLogicalRouterUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
+    public List<NatRule> findNatRulesByLogicalRouterUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
         final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("fields", "*");
 
         try {
-            return restConnector.executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>() {
-            }.getType(), uri, params);
+            final Type niciraListType = new TypeToken<NiciraNvpList<NatRule>>() {
+            }.getType();
+            return restConnector.<NiciraNvpList<NatRule>> executeRetrieveObject(niciraListType, uri, params).getResults();
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
     }
 
-    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(final String logicalRouterUuid, final String l3GatewayServiceUuid)
+    public List<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(final String logicalRouterUuid, final String l3GatewayServiceUuid)
                     throws NiciraNvpApiException {
         final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
@@ -577,8 +564,9 @@ public class NiciraNvpApi {
         params.put("attachment_gwsvc_uuid", l3GatewayServiceUuid);
 
         try {
-            return restConnector.executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
-            }.getType(), uri, params);
+            final Type niciraListType = new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
+            }.getType();
+            return restConnector.<NiciraNvpList<LogicalRouterPort>> executeRetrieveObject(niciraListType, uri, params).getResults();
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
@@ -612,51 +600,6 @@ public class NiciraNvpApi {
 
         public NiciraNvpApi build() {
             return new NiciraNvpApi(this);
-        }
-    }
-
-    public static class NatRuleAdapter implements JsonDeserializer<NatRule> {
-
-        @Override
-        public NatRule deserialize(final JsonElement jsonElement, final Type type, final JsonDeserializationContext context) throws JsonParseException {
-            final JsonObject jsonObject = jsonElement.getAsJsonObject();
-
-            if (!jsonObject.has("type")) {
-                throw new JsonParseException("Deserializing as a NatRule, but no type present in the json object");
-            }
-
-            final String natRuleType = jsonObject.get("type").getAsString();
-            if ("SourceNatRule".equals(natRuleType)) {
-                return context.deserialize(jsonElement, SourceNatRule.class);
-            } else if ("DestinationNatRule".equals(natRuleType)) {
-                return context.deserialize(jsonElement, DestinationNatRule.class);
-            }
-
-            throw new JsonParseException("Failed to deserialize type \"" + natRuleType + "\"");
-        }
-    }
-
-    public static class RoutingConfigAdapter implements JsonDeserializer<RoutingConfig> {
-
-        private static final String ROUTING_TABLE_ROUTING_CONFIG = "RoutingTableRoutingConfig";
-        private static final String SINGLE_DEFAULT_ROUTE_IMPLICIT_ROUTING_CONFIG = "SingleDefaultRouteImplicitRoutingConfig";
-
-        @Override
-        public RoutingConfig deserialize(final JsonElement jsonElement, final Type type, final JsonDeserializationContext context) throws JsonParseException {
-            final JsonObject jsonObject = jsonElement.getAsJsonObject();
-
-            if (!jsonObject.has("type")) {
-                throw new JsonParseException("Deserializing as a RoutingConfig, but no type present in the json object");
-            }
-
-            final String routingConfigType = jsonObject.get("type").getAsString();
-            if (SINGLE_DEFAULT_ROUTE_IMPLICIT_ROUTING_CONFIG.equals(routingConfigType)) {
-                return context.deserialize(jsonElement, SingleDefaultRouteImplicitRoutingConfig.class);
-            } else if (ROUTING_TABLE_ROUTING_CONFIG.equals(routingConfigType)) {
-                return context.deserialize(jsonElement, RoutingTableRoutingConfig.class);
-            }
-
-            throw new JsonParseException("Failed to deserialize type \"" + routingConfigType + "\"");
         }
     }
 }

@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.http.Consts;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -27,6 +28,7 @@ public class HttpUriRequestBuilder {
     private String path;
     private Optional<String> jsonPayload = ABSENT;
     private final Map<String, String> parameters = new HashMap<String, String>();
+    private final Map<String, String> methodParameters = new HashMap<String, String>();
 
     private HttpUriRequestBuilder() {
 
@@ -57,9 +59,20 @@ public class HttpUriRequestBuilder {
         return this;
     }
 
+    public HttpUriRequestBuilder methodParameters(final Map<String, String> methodParameters) {
+        this.methodParameters.clear();
+        this.methodParameters.putAll(methodParameters);
+        return this;
+    }
+
     public HttpUriRequest build() {
         validate();
         final RequestBuilder builder = RequestBuilder.create(method.toString()).setUri(buildUri());
+        if (!methodParameters.isEmpty()) {
+            for (final Entry<String, String> entry : methodParameters.entrySet()) {
+                builder.addParameter(entry.getKey(), entry.getValue());
+            }
+        }
         if (jsonPayload.isPresent()) {
             builder.addHeader(new BasicHeader(CONTENT_TYPE, JSON_CONTENT_TYPE))
                 .setEntity(new StringEntity(jsonPayload.get(), ContentType.create(JSON_CONTENT_TYPE, Consts.UTF_8)));

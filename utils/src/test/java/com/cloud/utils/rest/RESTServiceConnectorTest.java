@@ -19,29 +19,44 @@
 
 package com.cloud.utils.rest;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.type.CollectionType;
 import org.junit.Test;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
 
 public class RESTServiceConnectorTest {
     private static final BasicStatusLine HTTP_200_STATUS_LINE = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
@@ -66,8 +81,8 @@ public class RESTServiceConnectorTest {
 
         connector.executeUpdateObject(newObject, "/somepath");
 
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("PUT")));
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestPayloadMatcher.hasPayload(newObjectJson)));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("PUT"));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestPayloadMatcher.hasPayload(newObjectJson));
     }
 
     @Test
@@ -85,9 +100,9 @@ public class RESTServiceConnectorTest {
 
         connector.executeUpdateObject(newObject, "/somepath", DEFAULT_TEST_PARAMETERS);
 
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("PUT")));
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestPayloadMatcher.hasPayload(newObjectJson)));
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1")));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("PUT"));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestPayloadMatcher.hasPayload(newObjectJson));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1"));
     }
 
     @Test
@@ -95,20 +110,20 @@ public class RESTServiceConnectorTest {
         final TestPojo newObject = new TestPojo();
         newObject.setField("newValue");
         final String newObjectJson = gson.toJson(newObject);
-        final HttpEntity entity = mock(HttpEntity.class);
-        when(entity.getContent()).thenReturn(new ByteArrayInputStream(newObjectJson.getBytes(StandardCharsets.UTF_8)));
         final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
-        when(response.getEntity()).thenReturn(entity);
+        when(response.getEntity()).thenReturn(new StringEntity(newObjectJson));
         when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
         final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
         final RestClient restClient = new BasicRestClient(httpClient, "localhost");
         final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
-        connector.executeCreateObject(newObject, "/somepath");
+        final TestPojo object = connector.executeCreateObject(newObject, "/somepath");
 
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("POST")));
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestPayloadMatcher.hasPayload(newObjectJson)));
+        assertThat(object, notNullValue());
+        assertThat(object, equalTo(newObject));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("POST"));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestPayloadMatcher.hasPayload(newObjectJson));
         verify(response).close();
     }
 
@@ -117,21 +132,21 @@ public class RESTServiceConnectorTest {
         final TestPojo newObject = new TestPojo();
         newObject.setField("newValue");
         final String newObjectJson = gson.toJson(newObject);
-        final HttpEntity entity = mock(HttpEntity.class);
-        when(entity.getContent()).thenReturn(new ByteArrayInputStream(newObjectJson.getBytes(StandardCharsets.UTF_8)));
         final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
-        when(response.getEntity()).thenReturn(entity);
+        when(response.getEntity()).thenReturn(new StringEntity(newObjectJson));
         when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
         final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
         final RestClient restClient = new BasicRestClient(httpClient, "localhost");
         final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
-        connector.executeCreateObject(newObject, "/somepath", DEFAULT_TEST_PARAMETERS);
+        final TestPojo object = connector.executeCreateObject(newObject, "/somepath", DEFAULT_TEST_PARAMETERS);
 
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("POST")));
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestPayloadMatcher.hasPayload(newObjectJson)));
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1")));
+        assertThat(object, notNullValue());
+        assertThat(object, equalTo(newObject));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("POST"));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestPayloadMatcher.hasPayload(newObjectJson));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1"));
         verify(response).close();
     }
 
@@ -148,7 +163,7 @@ public class RESTServiceConnectorTest {
 
         connector.executeDeleteObject("/somepath");
 
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("DELETE")));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("DELETE"));
         verify(response).close();
     }
 
@@ -163,9 +178,11 @@ public class RESTServiceConnectorTest {
         final RestClient restClient = new BasicRestClient(httpClient, "localhost");
         final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
-        connector.executeRetrieveObject(TestPojo.class, "/somepath");
+        final List<TestPojo> objects = connector.executeRetrieveObject(TestPojo.class, "/somepath");
 
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("GET")));
+        assertThat(objects, notNullValue());
+        assertThat(objects, hasSize(1));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("GET"));
         verify(response).close();
     }
 
@@ -180,11 +197,82 @@ public class RESTServiceConnectorTest {
         final RestClient restClient = new BasicRestClient(httpClient, "localhost");
         final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
-        connector.executeRetrieveObject(TestPojo.class, "/somepath", DEFAULT_TEST_PARAMETERS);
+        final List<TestPojo> objects = connector.executeRetrieveObject(TestPojo.class, "/somepath", DEFAULT_TEST_PARAMETERS);
 
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestMethodMatcher.hasMethod("GET")));
-        verify(httpClient).execute((HttpHost) any(), argThat(HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1")));
+        assertThat(objects, notNullValue());
+        assertThat(objects, hasSize(1));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("GET"));
+        verify(httpClient).execute((HttpHost) any(), HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1"));
         verify(response).close();
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testCustomDeserializerTypeMismatch() throws Exception {
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        when(response.getEntity()).thenReturn(new StringEntity("[{somethig_not_type : \"WrongType\"}]"));
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder()
+            .client(restClient)
+            .classToDeserializerEntry(TestPojo.class, new TestPojoDeserializer())
+            .build();
+
+        connector.executeRetrieveObject(TestPojo.class, "/somepath");
+    }
+
+    @Test
+    public void testCustomDeserializerForCustomLists() throws Exception {
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        when(response.getEntity()).thenReturn(new StringEntity("{results: [{field : \"SomeValue\"}], results_count: 1}"));
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, "localhost");
+        final Class<? extends CollectionType> clazzListOfTestPojo = new ObjectMapper().getTypeFactory().constructCollectionType(List.class, TestPojo.class).getClass();
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder()
+            .client(restClient)
+            .classToDeserializerEntry(clazzListOfTestPojo, new CustomListDeserializer<TestPojoDeserializer>())
+            .build();
+
+        connector.executeRetrieveObject(TestPojo.class, "/somepath");
+    }
+
+    @Test
+    public void testJsonCollections() throws Exception {
+        final GsonBuilder gsonBuilder = new GsonBuilder();
+        // gsonBuilder.registerTypeAdapter(TestPojo[].class, new CustomListDeserializer<TestPojo[]>());
+        final Gson gson = gsonBuilder.create();
+        final Type type = new TypeToken<NiciraList<TestPojo>>() {
+        }.getType();
+        final NiciraList<TestPojo> fromJson = (NiciraList<TestPojo>) gson.fromJson("{results: [{field: \"value1\"}, {field: \"value2\"}]}", type);
+
+        for (final TestPojo tp : fromJson.getResults()) {
+            System.err.println(tp.getField());
+        }
+    }
+
+    class NiciraList<T> {
+        private List<T> results;
+        private int resultCount;
+
+        public List<T> getResults() {
+            return results;
+        }
+
+        public void setResults(final List<T> results) {
+            this.results = results;
+        }
+
+        public int getResultCount() {
+            return resultCount;
+        }
+
+        public void setResultCount(final int resultCount) {
+            this.resultCount = resultCount;
+        }
+
     }
 
     class TestPojo {
@@ -198,5 +286,48 @@ public class RESTServiceConnectorTest {
             this.field = field;
         }
 
+        @Override
+        public int hashCode() {
+            return HashCodeBuilder.reflectionHashCode(this);
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            return EqualsBuilder.reflectionEquals(this, obj);
+        }
+
+    }
+
+    private final class TestPojoDeserializer implements JsonDeserializer<TestPojo> {
+        @Override
+        public TestPojo deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException {
+            final JsonObject jsonObject = json.getAsJsonObject();
+
+            if (!jsonObject.has("type")) {
+                throw new JsonParseException("Deserializing as a TestPojo, but no type present in the json object");
+            }
+
+            return context.deserialize(jsonObject, TestPojo.class);
+        }
+    }
+
+    private final class CustomListDeserializer<T> implements JsonDeserializer<T> {
+        private final Gson standardGson = new GsonBuilder().create();
+
+        @Override
+        public T deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException {
+            final JsonObject jsonObject = json.getAsJsonObject();
+
+            System.err.println(json.toString());
+
+            if (jsonObject.has("results")) {
+                final JsonArray results = jsonObject.getAsJsonArray("results");
+                // final Class<?> typeOfArrayOfT = TypeToken.get(typeOfT).getRawType();
+                return context.deserialize(results, typeOfT);
+            } else {
+                return standardGson.fromJson(jsonObject, typeOfT);
+            }
+            // throw new RuntimeException();
+        }
     }
 }

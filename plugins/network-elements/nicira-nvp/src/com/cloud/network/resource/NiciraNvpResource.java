@@ -19,6 +19,9 @@
 
 package com.cloud.network.resource;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -43,6 +46,7 @@ import com.cloud.network.nicira.SourceNatRule;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.rest.CloudstackRESTException;
+import com.cloud.utils.rest.HttpClientHelper;
 
 public class NiciraNvpResource implements ServerResource {
 
@@ -60,7 +64,15 @@ public class NiciraNvpResource implements ServerResource {
     private CommandRetryUtility retryUtility;
 
     protected NiciraNvpApi createNiciraNvpApi(final String host, final String username, final String password) throws CloudstackRESTException {
-        return new NiciraNvpApi(host, username, password);
+        try {
+            return NiciraNvpApi.create().host(host).username(username).password(password).httpClient(HttpClientHelper.createHttpClient(5)).build();
+        } catch (final KeyManagementException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        } catch (final KeyStoreException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        }
     }
 
     @Override

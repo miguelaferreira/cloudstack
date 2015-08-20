@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.rest.HttpClientHelper;
 
 public class NiciraNvpApiIT {
 
@@ -43,7 +44,12 @@ public class NiciraNvpApiIT {
         final String host = System.getProperty("nvp.host");
         final String user = System.getProperty("nvp.admin.user");
         final String pass = System.getProperty("nvp.admin.pwd");
-        api = new NiciraNvpApi(host, user, pass);
+        api = NiciraNvpApi.create()
+            .host(host)
+            .username(user)
+            .password(pass)
+            .httpClient(HttpClientHelper.createHttpClient(5))
+            .build();
     }
 
     @Test
@@ -75,9 +81,9 @@ public class NiciraNvpApiIT {
             api.updateSecurityProfile(sProfile, sProfile.getUuid());
 
             // Read them all
-            NiciraNvpList<SecurityProfile> profiles = api.findSecurityProfile();
+            List<SecurityProfile> profiles = api.findSecurityProfile();
             SecurityProfile scInList = null;
-            for (final SecurityProfile iProfile : profiles.getResults()) {
+            for (final SecurityProfile iProfile : profiles) {
                 if (iProfile.getUuid().equalsIgnoreCase(sProfile.getUuid())) {
                     scInList = iProfile;
                 }
@@ -87,11 +93,8 @@ public class NiciraNvpApiIT {
 
             // Read them filtered by uuid (get one)
             profiles = api.findSecurityProfile(sProfile.getUuid());
-            assertEquals("Read a Security Profile different from the one just created and updated",
-                            sProfile,
-                            profiles.getResults().get(0));
-            assertEquals("Read a Security Profile filtered by unique id (UUID) with more than one item",
-                            1, profiles.getResults().size());
+            assertEquals("Read a Security Profile different from the one just created and updated", sProfile, profiles.get(0));
+            assertEquals("Read a Security Profile filtered by unique id (UUID) with more than one item", 1, profiles.size());
 
             // We can now delete the new entity
             api.deleteSecurityProfile(sProfile.getUuid());
@@ -102,7 +105,7 @@ public class NiciraNvpApiIT {
     }
 
     @Test
-    public void testCRUDAcl() throws NiciraNvpApiException {
+    public void testCRUDAcl() {
         Acl acl = new Acl();
         acl.setDisplayName("Acl" + timestamp);
 
@@ -110,17 +113,13 @@ public class NiciraNvpApiIT {
         // Note that if the protocol is 1 (ICMP) then you cannot put ports
         final List<AclRule> egressRules = new ArrayList<AclRule>();
         acl.setLogicalPortEgressRules(egressRules);
-        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null,
-                        "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
-        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null,
-                        "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
+        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null, "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
+        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null, "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
 
         final List<AclRule> ingressRules = new ArrayList<AclRule>();
         acl.setLogicalPortIngressRules(ingressRules);
-        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null,
-                        "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
-        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null,
-                        "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
+        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null, "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
+        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null, "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
 
         final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
         acl.setTags(tags);
@@ -136,23 +135,19 @@ public class NiciraNvpApiIT {
             api.updateAcl(acl, acl.getUuid());
 
             // Read them all
-            NiciraNvpList<Acl> acls = api.findAcl();
+            List<Acl> acls = api.findAcl();
             Acl scInList = null;
-            for (final Acl iAcl : acls.getResults()) {
+            for (final Acl iAcl : acls) {
                 if (iAcl.getUuid().equalsIgnoreCase(acl.getUuid())) {
                     scInList = iAcl;
                 }
             }
-            assertEquals("Read a ACL different from the one just created and updated",
-                            acl, scInList);
+            assertEquals("Read a ACL different from the one just created and updated", acl, scInList);
 
             // Read them filtered by uuid (get one)
             acls = api.findAcl(acl.getUuid());
-            assertEquals("Read a ACL different from the one just created and updated",
-                            acl,
-                            acls.getResults().get(0));
-            assertEquals("Read a ACL filtered by unique id (UUID) with more than one item",
-                            1, acls.getResults().size());
+            assertEquals("Read a ACL different from the one just created and updated", acl, acls.get(0));
+            assertEquals("Read a ACL filtered by unique id (UUID) with more than one item", 1, acls.size());
 
             // We can now delete the new entity
             api.deleteAcl(acl.getUuid());
@@ -163,7 +158,7 @@ public class NiciraNvpApiIT {
     }
 
     @Test
-    public void testCRUDLogicalSwitch() throws NiciraNvpApiException {
+    public void testCRUDLogicalSwitch() {
         LogicalSwitch logicalSwitch = new LogicalSwitch();
         logicalSwitch.setDisplayName("LogicalSwitch" + timestamp);
         logicalSwitch.setPortIsolationEnabled(true);
@@ -181,21 +176,17 @@ public class NiciraNvpApiIT {
             api.updateLogicalSwitch(logicalSwitch, logicalSwitch.getUuid());
 
             // Read them all
-            NiciraNvpList<LogicalSwitch> logicalSwitches = api.findLogicalSwitch();
-            for (final LogicalSwitch iLogicalSwitch : logicalSwitches.getResults()) {
+            List<LogicalSwitch> logicalSwitches = api.findLogicalSwitch();
+            for (final LogicalSwitch iLogicalSwitch : logicalSwitches) {
                 if (iLogicalSwitch.getUuid().equalsIgnoreCase(logicalSwitch.getUuid())) {
-                    assertEquals("Read a LogicalSwitch different from the one just created and updated",
-                                    logicalSwitch, iLogicalSwitch);
+                    assertEquals("Read a LogicalSwitch different from the one just created and updated", logicalSwitch, iLogicalSwitch);
                 }
             }
 
             // Read them filtered by uuid (get one)
             logicalSwitches = api.findLogicalSwitch(logicalSwitch.getUuid());
-            assertEquals("Read a LogicalSwitch different from the one just created and updated",
-                            logicalSwitch,
-                            logicalSwitches.getResults().get(0));
-            assertEquals("Read a LogicalSwitch filtered by unique id (UUID) with more than one item",
-                            1, logicalSwitches.getResults().size());
+            assertEquals("Read a LogicalSwitch different from the one just created and updated", logicalSwitch, logicalSwitches.get(0));
+            assertEquals("Read a LogicalSwitch filtered by unique id (UUID) with more than one item", 1, logicalSwitches.size());
 
             // Before deleting the test LogicalSwitch, test its ports
             final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
@@ -207,12 +198,10 @@ public class NiciraNvpApiIT {
             logicalSwitchPort.setDisplayName("UpdatedLSwitchPort" + timestamp);
             api.updateLogicalSwitchPort(logicalSwitch.getUuid(), logicalSwitchPort);
 
-            final NiciraNvpList<LogicalSwitchPort> logicalSwitchePorts =
-                            api.findLogicalSwitchPortsByUuid(logicalSwitch.getUuid(), logicalSwitchPort.getUuid());
-            for (final LogicalSwitchPort iLSwitchPort : logicalSwitchePorts.getResults()) {
+            final List<LogicalSwitchPort> logicalSwitchePorts = api.findLogicalSwitchPortsByUuid(logicalSwitch.getUuid(), logicalSwitchPort.getUuid());
+            for (final LogicalSwitchPort iLSwitchPort : logicalSwitchePorts) {
                 if (iLSwitchPort.getUuid().equalsIgnoreCase(logicalSwitchPort.getUuid())) {
-                    assertEquals("Read a LogicalSwitchPort different from the one just created and updated",
-                                    logicalSwitchPort, iLSwitchPort);
+                    assertEquals("Read a LogicalSwitchPort different from the one just created and updated", logicalSwitchPort, iLSwitchPort);
                 }
             }
 
@@ -257,9 +246,9 @@ public class NiciraNvpApiIT {
             api.updateLogicalRouter(logicalRouter, logicalRouter.getUuid());
 
             // Read them all
-            NiciraNvpList<LogicalRouter> logicalRouters = api.findLogicalRouter();
+            List<LogicalRouter> logicalRouters = api.findLogicalRouter();
             LogicalRouter lsInList = null;
-            for (final LogicalRouter iLogicalRouter : logicalRouters.getResults()) {
+            for (final LogicalRouter iLogicalRouter : logicalRouters) {
                 if (iLogicalRouter.getUuid().equalsIgnoreCase(logicalRouter.getUuid())) {
                     lsInList = iLogicalRouter;
                 }
@@ -269,14 +258,10 @@ public class NiciraNvpApiIT {
 
             // Read them filtered by uuid (get one)
             logicalRouters = api.findLogicalRouter(logicalRouter.getUuid());
-            assertEquals("Read a LogicalRouter different from the one just created and updated",
-                            logicalRouter,
-                            logicalRouters.getResults().get(0));
-            assertEquals("Read a LogicalRouter filtered by unique id (UUID) with more than one item",
-                            1, logicalRouters.getResults().size());
+            assertEquals("Read a LogicalRouter different from the one just created and updated", logicalRouter, logicalRouters.get(0));
+            assertEquals("Read a LogicalRouter filtered by unique id (UUID) with more than one item", 1, logicalRouters.size());
 
-            assertEquals("", logicalRouters.getResults().get(0),
-                            api.findOneLogicalRouterByUuid(logicalRouter.getUuid()));
+            assertEquals(logicalRouters.get(0), api.findOneLogicalRouterByUuid(logicalRouter.getUuid()));
 
             // Before deleting the test LogicalRouter, test its ports
             final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
@@ -297,12 +282,10 @@ public class NiciraNvpApiIT {
             logicalRouterPort.setDisplayName("UpdatedLRouterPort" + timestamp);
             api.updateLogicalRouterPort(logicalRouter.getUuid(), logicalRouterPort);
 
-            final NiciraNvpList<LogicalRouterPort> logicalRouterePorts =
-                            api.findLogicalRouterPortsByUuid(logicalRouter.getUuid(), logicalRouterPort.getUuid());
-            for (final LogicalRouterPort iLRouterPort : logicalRouterePorts.getResults()) {
+            final List<LogicalRouterPort> logicalRouterePorts = api.findLogicalRouterPortsByUuid(logicalRouter.getUuid(), logicalRouterPort.getUuid());
+            for (final LogicalRouterPort iLRouterPort : logicalRouterePorts) {
                 if (iLRouterPort.getUuid().equalsIgnoreCase(logicalRouterPort.getUuid())) {
-                    assertEquals("Read a LogicalRouterPort different from the one just created and updated",
-                                    logicalRouterPort, iLRouterPort);
+                    assertEquals("Read a LogicalRouterPort different from the one just created and updated", logicalRouterPort, iLRouterPort);
                 }
             }
 

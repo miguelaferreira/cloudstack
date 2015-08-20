@@ -1,6 +1,7 @@
 package com.cloud.utils.rest;
 
 import java.io.IOException;
+import java.net.URI;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -43,7 +44,9 @@ public class BasicRestClient implements RestClient {
 
     @Override
     public CloseableHttpResponse execute(final HttpUriRequest request) throws CloudstackRESTException {
-        s_logger.debug("Executig request: " + request);
+        final URI uri = request.getURI();
+        final String query = uri.getQuery();
+        s_logger.debug("Executig " + request.getMethod() + " request on " + host + uri.getPath() + (query != null ? "?" + query : ""));
         try {
             return client.execute(host, request);
         } catch (final IOException e) {
@@ -52,12 +55,13 @@ public class BasicRestClient implements RestClient {
     }
 
     @Override
-    public void closeResponse(final HttpUriRequest request, final CloseableHttpResponse response) throws CloudstackRESTException {
+    public void closeResponse(final CloseableHttpResponse response) throws CloudstackRESTException {
         try {
+            s_logger.debug("Closing HTTP connection");
             response.close();
         } catch (final IOException e) {
             final StringBuilder sb = new StringBuilder();
-            sb.append("Failed to close response object for request.\nReqest: ").append(request).append("\nResponse: ").append(response);
+            sb.append("Failed to close response object for request.\nResponse: ").append(response);
             throw new CloudstackRESTException(sb.toString(), e);
         }
     }

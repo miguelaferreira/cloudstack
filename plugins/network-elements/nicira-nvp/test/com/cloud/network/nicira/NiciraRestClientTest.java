@@ -74,7 +74,7 @@ public class NiciraRestClientTest {
             .build();
         loginRequest = HttpUriRequestBuilder.create()
             .method(HttpMethod.POST)
-            .parameters(loginParameters)
+            .methodParameters(loginParameters)
             .path(LOGIN_PATH)
             .build();
     }
