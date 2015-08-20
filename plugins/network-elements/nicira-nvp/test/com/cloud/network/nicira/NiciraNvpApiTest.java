@@ -20,9 +20,8 @@
 package com.cloud.network.nicira;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -31,16 +30,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
@@ -54,10 +47,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import com.cloud.utils.rest.HttpClientHelper;
+import com.cloud.utils.rest.HttpUriRequestMethodMatcher;
+import com.cloud.utils.rest.HttpUriRequestPathMatcher;
+import com.cloud.utils.rest.HttpUriRequestQueryMatcher;
 
 public class NiciraNvpApiTest {
     private static final StatusLine HTTP_200_REPSONSE = new BasicStatusLine(new ProtocolVersion("HTTPS", 1, 1), HttpStatus.SC_OK, "OK");
@@ -85,10 +79,8 @@ public class NiciraNvpApiTest {
                     + "\"schema\" : \"myTestSchema2\"}],"
                     + "\"result_count\": 2}";
 
-    HttpClient client = mock(HttpClient.class);
-    HttpMethod method;
-    String type;
-    String uri;
+    private static final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+    private final HttpClient client = mock(HttpClient.class);
 
     @Before
     public void setUp() throws Exception {
@@ -107,23 +99,18 @@ public class NiciraNvpApiTest {
 
     @Test
     public void testFindSecurityProfile() throws Exception {
-        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
         when(response.getStatusLine()).thenReturn(HTTP_200_REPSONSE);
         when(response.getEntity()).thenReturn(new StringEntity(SEC_PROFILE_LIST_JSON_RESPONSE));
         final CloseableHttpClient httpClient = spy(HttpClientHelper.createHttpClient(2));
         doReturn(response).when(httpClient).execute((HttpHost) any(), (HttpUriRequest) any());
         final NiciraNvpApi api = buildApi(httpClient);
 
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(method.getResponseBodyAsString()).thenReturn(SEC_PROFILE_LIST_JSON_RESPONSE);
-        final NameValuePair[] queryString = new NameValuePair[] { new NameValuePair("fields", "*") };
-
-        // Execute
         final NiciraNvpList<SecurityProfile> actualProfiles = api.findSecurityProfile();
 
-        // Assert
         verify(response, times(1)).close();
-        verify(method, times(1)).setQueryString(queryString);
+        verify(httpClient).execute(any(HttpHost.class), argThat(HttpUriRequestMethodMatcher.hasMethod("GET")));
+        verify(httpClient).execute(any(HttpHost.class), argThat(HttpUriRequestQueryMatcher.hasQuery("fields=*")));
+        verify(httpClient).execute(any(HttpHost.class), argThat(HttpUriRequestPathMatcher.hasPath(NiciraConstants.SEC_PROFILE_URI_PREFIX)));
         assertEquals("Wrong Uuid in the newly created SecurityProfile", UUID, actualProfiles.getResults().get(0).getUuid());
         assertEquals("Wrong Uuid in the newly created SecurityProfile", HREF, actualProfiles.getResults().get(0).getHref());
         assertEquals("Wrong Schema in the newly created SecurityProfile", SCHEMA, actualProfiles.getResults().get(0).getSchema());
@@ -131,57 +118,31 @@ public class NiciraNvpApiTest {
         assertEquals("Wrong Uuid in the newly created SecurityProfile", HREF2, actualProfiles.getResults().get(1).getHref());
         assertEquals("Wrong Schema in the newly created SecurityProfile", SCHEMA2, actualProfiles.getResults().get(1).getSchema());
         assertEquals("Wrong Schema in the newly created SecurityProfile", 2, actualProfiles.getResultCount());
-        assertEquals("Wrong URI for SecurityProfile creation REST service", NiciraConstants.SEC_PROFILE_URI_PREFIX, uri);
-        assertEquals("Wrong URI for SecurityProfile creation REST service", com.cloud.utils.rest.HttpMethod.GET, type);
     }
 
     @Test
-    public void testFindSecurityProfileByUuid() throws NiciraNvpApiException, IOException {
-        // Prepare
-        method = mock(GetMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(method.getResponseBodyAsString()).thenReturn(SEC_PROFILE_LIST_JSON_RESPONSE);
-        final NameValuePair[] queryString = new NameValuePair[] {
-                        new NameValuePair("uuid", UUID),
-                        new NameValuePair("fields", "*")
-        };
-        final List<NameValuePair> queryStringNvps = new ArrayList<>();
-        doAnswer(new Answer<Void>() {
-
-            @Override
-            public Void answer(final InvocationOnMock invocation) throws Throwable {
-                final NameValuePair[] arguments = (NameValuePair[]) invocation.getArguments()[0];
-                queryStringNvps.addAll(Arrays.asList(arguments));
-                return null;
-            }
-        }).when(method).setQueryString(any(NameValuePair[].class));
+    public void testFindSecurityProfileByUuid() throws Exception {
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_REPSONSE);
+        when(response.getEntity()).thenReturn(new StringEntity(SEC_PROFILE_LIST_JSON_RESPONSE));
+        final CloseableHttpClient httpClient = spy(HttpClientHelper.createHttpClient(2));
+        doReturn(response).when(httpClient).execute((HttpHost) any(), (HttpUriRequest) any());
         final NiciraNvpApi api = buildApi(httpClient);
 
-        // Execute
         final NiciraNvpList<SecurityProfile> actualProfiles = api.findSecurityProfile(UUID);
 
-        // Assert
-        verify(method, times(1)).releaseConnection();
-        assertTrue(queryStringNvps.containsAll(Arrays.asList(queryString)));
-        assertEquals(queryString.length, queryStringNvps.size());
-        assertEquals("Wrong Uuid in the newly created SecurityProfile",
-                        UUID, actualProfiles.getResults().get(0).getUuid());
-        assertEquals("Wrong Uuid in the newly created SecurityProfile",
-                        HREF, actualProfiles.getResults().get(0).getHref());
-        assertEquals("Wrong Schema in the newly created SecurityProfile",
-                        SCHEMA, actualProfiles.getResults().get(0).getSchema());
-        assertEquals("Wrong Uuid in the newly created SecurityProfile",
-                        UUID2, actualProfiles.getResults().get(1).getUuid());
-        assertEquals("Wrong Uuid in the newly created SecurityProfile",
-                        HREF2, actualProfiles.getResults().get(1).getHref());
-        assertEquals("Wrong Schema in the newly created SecurityProfile",
-                        SCHEMA2, actualProfiles.getResults().get(1).getSchema());
-        assertEquals("Wrong Schema in the newly created SecurityProfile",
-                        2, actualProfiles.getResultCount());
-        assertEquals("Wrong URI for SecurityProfile creation REST service",
-                        NiciraConstants.SEC_PROFILE_URI_PREFIX, uri);
-        assertEquals("Wrong HTTP method for SecurityProfile creation REST service",
-                        com.cloud.utils.rest.HttpMethod.GET, type);
+        verify(response, times(1)).close();
+        verify(httpClient).execute(any(HttpHost.class), argThat(HttpUriRequestMethodMatcher.hasMethod("GET")));
+        verify(httpClient).execute(any(HttpHost.class), argThat(HttpUriRequestQueryMatcher.containsSubQuery("uuid=" + UUID)));
+        verify(httpClient).execute(any(HttpHost.class), argThat(HttpUriRequestQueryMatcher.containsSubQuery("fields=*")));
+        verify(httpClient).execute(any(HttpHost.class), argThat(HttpUriRequestPathMatcher.hasPath(NiciraConstants.SEC_PROFILE_URI_PREFIX)));
+        assertEquals("Wrong Uuid in the newly created SecurityProfile", UUID, actualProfiles.getResults().get(0).getUuid());
+        assertEquals("Wrong Uuid in the newly created SecurityProfile", HREF, actualProfiles.getResults().get(0).getHref());
+        assertEquals("Wrong Schema in the newly created SecurityProfile", SCHEMA, actualProfiles.getResults().get(0).getSchema());
+        assertEquals("Wrong Uuid in the newly created SecurityProfile", UUID2, actualProfiles.getResults().get(1).getUuid());
+        assertEquals("Wrong Uuid in the newly created SecurityProfile", HREF2, actualProfiles.getResults().get(1).getHref());
+        assertEquals("Wrong Schema in the newly created SecurityProfile", SCHEMA2, actualProfiles.getResults().get(1).getSchema());
+        assertEquals("Wrong Schema in the newly created SecurityProfile", 2, actualProfiles.getResultCount());
     }
 
     @Test

@@ -151,9 +151,8 @@ public class NiciraNvpApi {
      */
     public <T> NiciraNvpList<T> find(final Optional<String> uuid, final Class<T> clazz) throws NiciraNvpApiException {
         final String uri = prefixMap.get(clazz);
-        Map<String, String> params = defaultListParams;
+        final Map<String, String> params = new HashMap<String, String>(defaultListParams);
         if (uuid.isPresent()) {
-            params = new HashMap<String, String>(defaultListParams);
             params.put("uuid", uuid.get());
         }
 
@@ -241,7 +240,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public NiciraNvpList<SecurityProfile> findSecurityProfile() throws NiciraNvpApiException {
-        return findSecurityProfile(ABSENT);
+        return find(ABSENT, SecurityProfile.class);
     }
 
     /**
@@ -253,8 +252,8 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    public NiciraNvpList<SecurityProfile> findSecurityProfile(final Optional<String> uuid) throws NiciraNvpApiException {
-        return find(uuid, SecurityProfile.class);
+    public NiciraNvpList<SecurityProfile> findSecurityProfile(final String uuid) throws NiciraNvpApiException {
+        return find(Optional.fromNullable(uuid), SecurityProfile.class);
     }
 
     /**
