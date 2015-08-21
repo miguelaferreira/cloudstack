@@ -56,6 +56,7 @@ class TestNiciraContoller(cloudstackTestCase):
             'availability':      'Optional',
             'serviceProviderList': {
                     'SourceNat':    'VirtualRouter',
+                    'Firewall':     'VirtualRouter',
                     'Connectivity': 'NiciraNvp'
             }
         }
