@@ -51,13 +51,14 @@ class TestNiciraContoller(cloudstackTestCase):
             'name':              'NiciraEnabledNetwork',
             'displaytext':       'NiciraEnabledNetwork',
             'guestiptype':       'Isolated',
-            'supportedservices': 'SourceNat,Firewall,Connectivity',
+            'supportedservices': 'SourceNat,Firewall,PortForwarding,Connectivity',
             'traffictype':       'GUEST',
             'availability':      'Optional',
             'serviceProviderList': {
-                    'SourceNat':    'VirtualRouter',
-                    'Firewall':     'VirtualRouter',
-                    'Connectivity': 'NiciraNvp'
+                    'SourceNat':      'VirtualRouter',
+                    'Firewall':       'VirtualRouter',
+                    'PortForwarding': 'VirtualRouter',
+                    'Connectivity':   'NiciraNvp'
             }
         }
 
