@@ -89,7 +89,6 @@ class TestNiciraContoller(cloudstackTestCase):
         )
         if template == FAILED:
             raise Exception("get_template() failed to return template with description %s" % cls.services['ostype'])
-        print "DEBUG:: template = %s" % template.__dict__
 
         cls.vm_services = {
             'mode': cls.zone.networktype,
@@ -233,7 +232,6 @@ class TestNiciraContoller(cloudstackTestCase):
         )
         self.cleanup.append(network)
 
-        print "DEBUG:: network.id = %s" % network.id
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
@@ -248,7 +246,7 @@ class TestNiciraContoller(cloudstackTestCase):
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
         self.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
 
-        self.assertEqual(isinstance(list_vm_response, list), True, 'Response rdid not return a valid list')
+        self.assertEqual(isinstance(list_vm_response, list), True, 'Response did not return a valid list')
         self.assertNotEqual(len(list_vm_response), 0, 'List of VMs is empty')
 
         vm_response = list_vm_response[0]
