@@ -63,19 +63,19 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.network_offering = NetworkOffering.create(cls.api_client, cls.network_offerring_services)
         cls.network_offering.update(cls.api_client, state='Enabled')
 
-        cls.nicir_credentials = {
+        cls.nicira_credentials = {
             'username': 'admin',
             'password': 'admin'
         }
 
         cls.nicira_master_controller = cls.determine_master_controller(
             cls.nicira_hosts,
-            cls.nicir_credentials
+            cls.nicira_credentials
         )
 
         cls.transport_zone_uuid = cls.get_transport_zone_from_controller(
             cls.nicira_master_controller,
-            cls.nicir_credentials
+            cls.nicira_credentials
         )
 
         cls.domain = get_domain(cls.api_client)
@@ -212,8 +212,8 @@ class TestNiciraContoller(cloudstackTestCase):
             None,
             self.physical_network_id,
             hostname=nicira_slave,
-            username=self.nicir_credentials['username'],
-            password=self.nicir_credentials['password'],
+            username=self.nicira_credentials['username'],
+            password=self.nicira_credentials['password'],
             transportzoneuuid=self.transport_zone_uuid)
         self.cleanup.append(nicira_device)
 
@@ -231,6 +231,7 @@ class TestNiciraContoller(cloudstackTestCase):
         )
         self.cleanup.append(network)
 
+        print "DEBUG:: network.id = %s" % network.id
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
