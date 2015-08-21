@@ -98,10 +98,6 @@ public class NiciraNvpApiTest {
 
         final List<SecurityProfile> actualProfiles = api.findSecurityProfile();
 
-        verify(response, times(1)).close();
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.hasMethod("GET"));
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.hasQuery("fields=*"));
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPathMatcher.hasPath(NiciraConstants.SEC_PROFILE_URI_PREFIX));
         assertThat("Wrong number of results", actualProfiles, hasSize(2));
         assertThat("Wrong Uuid in the newly created SecurityProfile", actualProfiles, Matchers.<SecurityProfile> contains(
                         hasProperty("uuid", equalTo(UUID)),
@@ -112,6 +108,10 @@ public class NiciraNvpApiTest {
         assertThat("Wrong Schema in the newly created SecurityProfile", actualProfiles, Matchers.<SecurityProfile> contains(
                         hasProperty("schema", equalTo(SCHEMA)),
                         hasProperty("schema", equalTo(SCHEMA2))));
+        verify(response, times(1)).close();
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.hasMethod("GET"));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.hasQuery("fields=*"));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPathMatcher.hasPath(NiciraConstants.SEC_PROFILE_URI_PREFIX));
     }
 
     @Test
@@ -126,11 +126,6 @@ public class NiciraNvpApiTest {
 
         final List<SecurityProfile> actualProfiles = api.findSecurityProfile(UUID);
 
-        verify(response, times(1)).close();
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.hasMethod("GET"));
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.containsSubQuery("uuid=" + UUID));
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.containsSubQuery("fields=*"));
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPathMatcher.hasPath(NiciraConstants.SEC_PROFILE_URI_PREFIX));
         assertThat("Wrong number of results", actualProfiles, hasSize(2));
         assertThat("Wrong Uuid in the newly created SecurityProfile", actualProfiles, Matchers.<SecurityProfile> contains(
                         hasProperty("uuid", equalTo(UUID)),
@@ -141,6 +136,11 @@ public class NiciraNvpApiTest {
         assertThat("Wrong Schema in the newly created SecurityProfile", actualProfiles, Matchers.<SecurityProfile> contains(
                         hasProperty("schema", equalTo(SCHEMA)),
                         hasProperty("schema", equalTo(SCHEMA2))));
+        verify(response, times(1)).close();
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.hasMethod("GET"));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.containsSubQuery("uuid=" + UUID));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.containsSubQuery("fields=*"));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPathMatcher.hasPath(NiciraConstants.SEC_PROFILE_URI_PREFIX));
     }
 
     @Test
@@ -154,12 +154,12 @@ public class NiciraNvpApiTest {
 
         final SecurityProfile actualSecProfile = api.createSecurityProfile(new SecurityProfile());
 
-        verify(response, times(1)).close();
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.hasMethod("POST"));
-        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPathMatcher.hasPath(NiciraConstants.SEC_PROFILE_URI_PREFIX));
         assertThat("Wrong Uuid in the newly created SecurityProfile", actualSecProfile, hasProperty("uuid", equalTo(UUID)));
         assertThat("Wrong Href in the newly created SecurityProfile", actualSecProfile, hasProperty("href", equalTo(HREF)));
         assertThat("Wrong Schema in the newly created SecurityProfile", actualSecProfile, hasProperty("schema", equalTo(SCHEMA)));
+        verify(response, times(1)).close();
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.hasMethod("POST"));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPathMatcher.hasPath(NiciraConstants.SEC_PROFILE_URI_PREFIX));
     }
 
     @Test
