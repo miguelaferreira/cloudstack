@@ -38,11 +38,23 @@ import com.google.gson.reflect.TypeToken;
 public class NiciraNvpApi {
 
     private static final Optional<String> ABSENT = Optional.absent();
+    private static final String WILDCARD_QUERY_PARAMETER = "*";
+    private static final String ATTACHMENT_VLAN_PARAMETER = "attachment_vlan";
+    private static final String ATTACHMENT_GWSVC_UUID_QUERY_PARAMETER = "attachment_gwsvc_uuid";
+    private static final String UUID_QUERY_PARAMETER = "uuid";
+    private static final String FIELDS_QUERY_PARAMETER = "fields";
+    private static final String ATTACHMENT_VIF_UUID_QUERY_PARAMETER_NAME = "attachment_vif_uuid";
+
+    private static final String ATTACHMENT_PATH_SEGMENT = "/attachment";
+    private static final String NAT_PATH_SEGMENT = "/nat";
+    private static final String LPORT_PATH_SEGMENT = "/lport";
+
     private static final String SEC_PROFILE_URI_PREFIX = "/ws.v1/security-profile";
     private static final String ACL_URI_PREFIX = "/ws.v1/acl";
     private static final String SWITCH_URI_PREFIX = "/ws.v1/lswitch";
     private static final String ROUTER_URI_PREFIX = "/ws.v1/lrouter";
     private static final String LOGIN_URL = "/ws.v1/login";
+    private static final String CONTROL_CLUSTER_STATUS_URL = "/ws.v1/control-cluster/status";
 
     private static final int DEFAULT_MAX_RETRIES = 5;
 
@@ -72,7 +84,7 @@ public class NiciraNvpApi {
         }.getType());
 
         defaultListParams = new HashMap<String, String>();
-        defaultListParams.put("fields", "*");
+        defaultListParams.put(FIELDS_QUERY_PARAMETER, WILDCARD_QUERY_PARAMETER);
     }
 
     private NiciraNvpApi(final Builder builder) {
@@ -105,7 +117,7 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    protected <T> T create(final T entity) throws NiciraNvpApiException {
+    private <T> T create(final T entity) throws NiciraNvpApiException {
         final String uri = prefixMap.get(entity.getClass());
         return createWithUri(entity, uri);
     }
@@ -117,7 +129,7 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    protected <T> T createWithUri(final T entity, final String uri) throws NiciraNvpApiException {
+    private <T> T createWithUri(final T entity, final String uri) throws NiciraNvpApiException {
         T createdEntity;
         try {
             createdEntity = restConnector.executeCreateObject(entity, uri, Collections.<String, String> emptyMap());
@@ -131,27 +143,17 @@ public class NiciraNvpApi {
     /**
      * GET list of items
      *
-     * @return
-     * @throws NiciraNvpApiException
-     */
-    protected <T> NiciraNvpList<T> find(final Class<T> clazz) throws NiciraNvpApiException {
-        return find(ABSENT, clazz);
-    }
-
-    /**
-     * GET list of items
-     *
      * @param uuid
      *
      * @return
      * @throws NiciraNvpApiException
      */
-    public <T> NiciraNvpList<T> find(final Optional<String> uuid, final Class<T> clazz) throws NiciraNvpApiException {
+    private <T> List<T> find(final Optional<String> uuid, final Class<T> clazz) throws NiciraNvpApiException {
         final String uri = prefixMap.get(clazz);
         Map<String, String> params = defaultListParams;
         if (uuid.isPresent()) {
             params = new HashMap<String, String>(defaultListParams);
-            params.put("uuid", uuid.get());
+            params.put(UUID_QUERY_PARAMETER, uuid.get());
         }
 
         NiciraNvpList<T> entities;
@@ -165,7 +167,7 @@ public class NiciraNvpApi {
             throw new NiciraNvpApiException("Unexpected response from API");
         }
 
-        return entities;
+        return entities.getResults();
     }
 
     /**
@@ -175,7 +177,7 @@ public class NiciraNvpApi {
      * @param uuid
      * @throws NiciraNvpApiException
      */
-    public <T> void update(final T item, final String uuid) throws NiciraNvpApiException {
+    private <T> void update(final T item, final String uuid) throws NiciraNvpApiException {
         final String uri = prefixMap.get(item.getClass()) + "/" + uuid;
         updateWithUri(item, uri);
     }
@@ -187,7 +189,7 @@ public class NiciraNvpApi {
      * @param uuid
      * @throws NiciraNvpApiException
      */
-    public <T> void updateWithUri(final T item, final String uri) throws NiciraNvpApiException {
+    private <T> void updateWithUri(final T item, final String uri) throws NiciraNvpApiException {
         try {
             restConnector.executeUpdateObject(item, uri, Collections.<String, String> emptyMap());
         } catch (final CloudstackRESTException e) {
@@ -201,7 +203,7 @@ public class NiciraNvpApi {
      * @param securityProfileUuid
      * @throws NiciraNvpApiException
      */
-    public <T> void delete(final String uuid, final Class<T> clazz) throws NiciraNvpApiException {
+    private <T> void delete(final String uuid, final Class<T> clazz) throws NiciraNvpApiException {
         final String uri = prefixMap.get(clazz) + "/" + uuid;
         deleteWithUri(uri);
     }
@@ -212,7 +214,7 @@ public class NiciraNvpApi {
      * @param securityProfileUuid
      * @throws NiciraNvpApiException
      */
-    public void deleteWithUri(final String uri) throws NiciraNvpApiException {
+    private void deleteWithUri(final String uri) throws NiciraNvpApiException {
         try {
             restConnector.executeDeleteObject(uri);
         } catch (final CloudstackRESTException e) {
@@ -238,7 +240,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public List<SecurityProfile> findSecurityProfile() throws NiciraNvpApiException {
-        return find(ABSENT, SecurityProfile.class).getResults();
+        return find(ABSENT, SecurityProfile.class);
     }
 
     /**
@@ -251,7 +253,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public List<SecurityProfile> findSecurityProfile(final String uuid) throws NiciraNvpApiException {
-        return find(Optional.fromNullable(uuid), SecurityProfile.class).getResults();
+        return find(Optional.fromNullable(uuid), SecurityProfile.class);
     }
 
     /**
@@ -304,7 +306,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public List<Acl> findAcl(final String uuid) throws NiciraNvpApiException {
-        return find(Optional.fromNullable(uuid), Acl.class).getResults();
+        return find(Optional.fromNullable(uuid), Acl.class);
     }
 
     /**
@@ -350,7 +352,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public List<LogicalSwitch> findLogicalSwitch(final String uuid) throws NiciraNvpApiException {
-        return find(Optional.fromNullable(uuid), LogicalSwitch.class).getResults();
+        return find(Optional.fromNullable(uuid), LogicalSwitch.class);
     }
 
     /**
@@ -369,30 +371,29 @@ public class NiciraNvpApi {
     }
 
     public LogicalSwitchPort createLogicalSwitchPort(final String logicalSwitchUuid, final LogicalSwitchPort logicalSwitchPort) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport";
+        final String uri = buildLogicalSwitchElementUri(logicalSwitchUuid, LPORT_PATH_SEGMENT);
         return createWithUri(logicalSwitchPort, uri);
     }
 
     public void updateLogicalSwitchPort(final String logicalSwitchUuid, final LogicalSwitchPort logicalSwitchPort) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport/" + logicalSwitchPort.getUuid();
+        final String uri = buildLogicalSwitchElementUri(logicalSwitchUuid, LPORT_PATH_SEGMENT, logicalSwitchPort.getUuid().toString());
         updateWithUri(logicalSwitchPort, uri);
     }
 
     public void updateLogicalSwitchPortAttachment(final String logicalSwitchUuid, final String logicalSwitchPortUuid, final Attachment attachment) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport/" + logicalSwitchPortUuid + "/attachment";
+        final String uri = buildLogicalSwitchElementUri(logicalSwitchUuid, LPORT_PATH_SEGMENT, logicalSwitchPortUuid) + ATTACHMENT_PATH_SEGMENT;
         updateWithUri(attachment, uri);
     }
 
     public void deleteLogicalSwitchPort(final String logicalSwitchUuid, final String logicalSwitchPortUuid) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport/" + logicalSwitchPortUuid;
+        final String uri = buildLogicalSwitchElementUri(logicalSwitchUuid, LPORT_PATH_SEGMENT, logicalSwitchPortUuid);
         deleteWithUri(uri);
     }
 
     public String findLogicalSwitchPortUuidByVifAttachmentUuid(final String logicalSwitchUuid, final String vifAttachmentUuid) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport";
-        final Map<String, String> params = new HashMap<String, String>();
-        params.put("attachment_vif_uuid", vifAttachmentUuid);
-        params.put("fields", "uuid");
+        final String uri = buildLogicalSwitchElementUri(logicalSwitchUuid, LPORT_PATH_SEGMENT);
+        final Map<String, String> params = buildBasicParametersMap(UUID_QUERY_PARAMETER);
+        params.put(ATTACHMENT_VIF_UUID_QUERY_PARAMETER_NAME, vifAttachmentUuid);
 
         NiciraNvpList<LogicalSwitchPort> niciraList;
         try {
@@ -414,7 +415,7 @@ public class NiciraNvpApi {
     }
 
     public ControlClusterStatus getControlClusterStatus() throws NiciraNvpApiException {
-        final String uri = "/ws.v1/control-cluster/status";
+        final String uri = CONTROL_CLUSTER_STATUS_URL;
         try {
             return restConnector.executeRetrieveObject(ControlClusterStatus.class, uri, new HashMap<String, String>());
         } catch (final CloudstackRESTException e) {
@@ -423,10 +424,9 @@ public class NiciraNvpApi {
     }
 
     public List<LogicalSwitchPort> findLogicalSwitchPortsByUuid(final String logicalSwitchUuid, final String logicalSwitchPortUuid) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport";
-        final Map<String, String> params = new HashMap<String, String>();
-        params.put("uuid", logicalSwitchPortUuid);
-        params.put("fields", "uuid");
+        final String uri = buildLogicalSwitchElementUri(logicalSwitchUuid, LPORT_PATH_SEGMENT);
+        final Map<String, String> params = buildBasicParametersMap(UUID_QUERY_PARAMETER);
+        params.put(UUID_QUERY_PARAMETER, logicalSwitchPortUuid);
 
         try {
             final Type niciraListType = new TypeToken<NiciraNvpList<LogicalSwitchPort>>() {
@@ -438,10 +438,9 @@ public class NiciraNvpApi {
     }
 
     public List<LogicalRouterPort> findLogicalRouterPortsByUuid(final String logicalRouterUuid, final String logicalRouterPortUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
-        final Map<String, String> params = new HashMap<String, String>();
-        params.put("uuid", logicalRouterPortUuid);
-        params.put("fields", "uuid");
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, LPORT_PATH_SEGMENT);
+        final Map<String, String> params = buildBasicParametersMap(UUID_QUERY_PARAMETER);
+        params.put(UUID_QUERY_PARAMETER, logicalRouterPortUuid);
 
         try {
             final Type niciraListType = new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
@@ -474,7 +473,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public List<LogicalRouter> findLogicalRouter(final String uuid) throws NiciraNvpApiException {
-        return find(Optional.fromNullable(uuid), LogicalRouter.class).getResults();
+        return find(Optional.fromNullable(uuid), LogicalRouter.class);
     }
 
     public LogicalRouter findOneLogicalRouterByUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
@@ -486,52 +485,51 @@ public class NiciraNvpApi {
     }
 
     public void deleteLogicalRouter(final String logicalRouterUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid;
+        final String uri = buildLogicalRouterUri(logicalRouterUuid);
         deleteWithUri(uri);
     }
 
     public LogicalRouterPort createLogicalRouterPort(final String logicalRouterUuid, final LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, LPORT_PATH_SEGMENT);
         return createWithUri(logicalRouterPort, uri);
     }
 
     public void deleteLogicalRouterPort(final String logicalRouterUuid, final String logicalRouterPortUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport/" + logicalRouterPortUuid;
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, LPORT_PATH_SEGMENT, logicalRouterPortUuid);
         deleteWithUri(uri);
     }
 
     public void updateLogicalRouterPort(final String logicalRouterUuid, final LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport/" + logicalRouterPort.getUuid();
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, LPORT_PATH_SEGMENT, logicalRouterPort.getUuid().toString());
         updateWithUri(logicalRouterPort, uri);
     }
 
     public void updateLogicalRouterPortAttachment(final String logicalRouterUuid, final String logicalRouterPortUuid, final Attachment attachment) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport/" + logicalRouterPortUuid + "/attachment";
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, LPORT_PATH_SEGMENT, logicalRouterPortUuid) + ATTACHMENT_PATH_SEGMENT;
         updateWithUri(attachment, uri);
     }
 
     public NatRule createLogicalRouterNatRule(final String logicalRouterUuid, final NatRule natRule) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat";
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, NAT_PATH_SEGMENT);
         return createWithUri(natRule, uri);
     }
 
     public void updateLogicalRouterNatRule(final String logicalRouterUuid, final NatRule natRule) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat/" + natRule.getUuid();
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, NAT_PATH_SEGMENT, natRule.getUuid().toString());
         updateWithUri(natRule, uri);
     }
 
     public void deleteLogicalRouterNatRule(final String logicalRouterUuid, final UUID natRuleUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat/" + natRuleUuid.toString();
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, NAT_PATH_SEGMENT, natRuleUuid.toString());
         deleteWithUri(uri);
     }
 
     public List<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(final String logicalRouterUuid, final String gatewayServiceUuid, final long vlanId)
                     throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
-        final Map<String, String> params = new HashMap<String, String>();
-        params.put("attachment_gwsvc_uuid", gatewayServiceUuid);
-        params.put("attachment_vlan", Long.toString(vlanId));
-        params.put("fields", "*");
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, LPORT_PATH_SEGMENT);
+        final Map<String, String> params = buildBasicParametersMap(WILDCARD_QUERY_PARAMETER);
+        params.put(ATTACHMENT_GWSVC_UUID_QUERY_PARAMETER, gatewayServiceUuid);
+        params.put(ATTACHMENT_VLAN_PARAMETER, Long.toString(vlanId));
 
         try {
             final Type niciraListType = new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
@@ -543,9 +541,8 @@ public class NiciraNvpApi {
     }
 
     public List<NatRule> findNatRulesByLogicalRouterUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat";
-        final Map<String, String> params = new HashMap<String, String>();
-        params.put("fields", "*");
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, NAT_PATH_SEGMENT);
+        final Map<String, String> params = buildBasicParametersMap(WILDCARD_QUERY_PARAMETER);
 
         try {
             final Type niciraListType = new TypeToken<NiciraNvpList<NatRule>>() {
@@ -558,10 +555,9 @@ public class NiciraNvpApi {
 
     public List<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(final String logicalRouterUuid, final String l3GatewayServiceUuid)
                     throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
-        final Map<String, String> params = new HashMap<String, String>();
-        params.put("fields", "*");
-        params.put("attachment_gwsvc_uuid", l3GatewayServiceUuid);
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, LPORT_PATH_SEGMENT);
+        final Map<String, String> params = buildBasicParametersMap(WILDCARD_QUERY_PARAMETER);
+        params.put(ATTACHMENT_GWSVC_UUID_QUERY_PARAMETER, l3GatewayServiceUuid);
 
         try {
             final Type niciraListType = new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
@@ -570,6 +566,40 @@ public class NiciraNvpApi {
         } catch (final CloudstackRESTException e) {
             throw new NiciraNvpApiException(e);
         }
+    }
+
+    private static Map<String, String> buildBasicParametersMap(final String fieldsQueryValue) {
+        final Map<String, String> params = new HashMap<String, String>();
+        params.put(FIELDS_QUERY_PARAMETER, fieldsQueryValue);
+        return params;
+    }
+
+    private static String buildUri(final String uriPrefix, final String uuid) {
+        return uriPrefix + "/" + uuid;
+    }
+
+    private static String buildLogicalSwitchUri(final String logicalSwitchUuid) {
+        return buildUri(SWITCH_URI_PREFIX, logicalSwitchUuid);
+    }
+
+    private static String buildLogicalSwitchElementUri(final String logicalSwitchUuid, final String logicalElementType) {
+        return buildLogicalSwitchUri(logicalSwitchUuid) + logicalElementType;
+    }
+
+    private static String buildLogicalSwitchElementUri(final String logicalSwitchUuid, final String logicalElementType, final String elementUuid) {
+        return buildLogicalSwitchElementUri(logicalSwitchUuid, logicalElementType) + "/" + elementUuid.toString();
+    }
+
+    private static String buildLogicalRouterUri(final String logicalRouterUuid) {
+        return buildUri(ROUTER_URI_PREFIX, logicalRouterUuid);
+    }
+
+    private static String buildLogicalRouterElementUri(final String logicalRouterUuid, final String logicalElementType) {
+        return buildLogicalRouterUri(logicalRouterUuid) + logicalElementType;
+    }
+
+    private static String buildLogicalRouterElementUri(final String logicalRouterUuid, final String logicalRouterElementType, final String elementUuid) {
+        return buildLogicalRouterElementUri(logicalRouterUuid, logicalRouterElementType) + "/" + elementUuid.toString();
     }
 
     public static class Builder {
