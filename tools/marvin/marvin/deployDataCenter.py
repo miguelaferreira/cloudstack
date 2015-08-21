@@ -548,52 +548,52 @@ class DeployDataCenters(object):
                         self.__addToCleanUp(
                             "NetworkServiceProvider",
                             result.id)
-                    for device in provider.devices:
-                        if provider.name == 'Netscaler':
-                            dev = addNetscalerLoadBalancer.\
-                                addNetscalerLoadBalancerCmd()
-                            dev.username = device.username
-                            dev.password = device.password
-                            dev.networkdevicetype = device.networkdevicetype
-                            dev.url = configGenerator.getDeviceUrl(device)
-                            dev.physicalnetworkid = phynetwrk.id
-                            ret = self.__apiClient.addNetscalerLoadBalancer(
-                                dev)
-                            if ret.id:
-                                self.__tcRunLogger.\
-                                    debug("==== AddNetScalerLB "
-                                          "Successful=====")
-                                self.__addToCleanUp(
-                                    "NetscalerLoadBalancer",
-                                    ret.id)
-                        elif provider.name == 'JuniperSRX':
-                            dev = addSrxFirewall.addSrxFirewallCmd()
-                            dev.username = device.username
-                            dev.password = device.password
-                            dev.networkdevicetype = device.networkdevicetype
-                            dev.url = configGenerator.getDeviceUrl(device)
-                            dev.physicalnetworkid = phynetwrk.id
-                            ret = self.__apiClient.addSrxFirewall(dev)
-                            if ret.id:
-                                self.__tcRunLogger.\
-                                    debug("==== AddSrx "
-                                          "Successful=====")
-                                self.__addToCleanUp("SrxFirewall", ret.id)
-                        elif provider.name == 'F5BigIp':
-                            dev = addF5LoadBalancer.addF5LoadBalancerCmd()
-                            dev.username = device.username
-                            dev.password = device.password
-                            dev.networkdevicetype = device.networkdevicetype
-                            dev.url = configGenerator.getDeviceUrl(device)
-                            dev.physicalnetworkid = phynetwrk.id
-                            ret = self.__apiClient.addF5LoadBalancer(dev)
-                            if ret.id:
-                                self.__tcRunLogger.\
-                                    debug("==== AddF5 "
-                                          "Successful=====")
-                                self.__addToCleanUp("F5LoadBalancer", ret.id)
-                        elif provider.name == "NiciraNvp":
-                            for device in provider.devices:
+                    if provider.devices is not None:
+                        for device in provider.devices:
+                            if provider.name == 'Netscaler':
+                                dev = addNetscalerLoadBalancer.\
+                                    addNetscalerLoadBalancerCmd()
+                                dev.username = device.username
+                                dev.password = device.password
+                                dev.networkdevicetype = device.networkdevicetype
+                                dev.url = configGenerator.getDeviceUrl(device)
+                                dev.physicalnetworkid = phynetwrk.id
+                                ret = self.__apiClient.addNetscalerLoadBalancer(
+                                    dev)
+                                if ret.id:
+                                    self.__tcRunLogger.\
+                                        debug("==== AddNetScalerLB "
+                                              "Successful=====")
+                                    self.__addToCleanUp(
+                                        "NetscalerLoadBalancer",
+                                        ret.id)
+                            elif provider.name == 'JuniperSRX':
+                                dev = addSrxFirewall.addSrxFirewallCmd()
+                                dev.username = device.username
+                                dev.password = device.password
+                                dev.networkdevicetype = device.networkdevicetype
+                                dev.url = configGenerator.getDeviceUrl(device)
+                                dev.physicalnetworkid = phynetwrk.id
+                                ret = self.__apiClient.addSrxFirewall(dev)
+                                if ret.id:
+                                    self.__tcRunLogger.\
+                                        debug("==== AddSrx "
+                                              "Successful=====")
+                                    self.__addToCleanUp("SrxFirewall", ret.id)
+                            elif provider.name == 'F5BigIp':
+                                dev = addF5LoadBalancer.addF5LoadBalancerCmd()
+                                dev.username = device.username
+                                dev.password = device.password
+                                dev.networkdevicetype = device.networkdevicetype
+                                dev.url = configGenerator.getDeviceUrl(device)
+                                dev.physicalnetworkid = phynetwrk.id
+                                ret = self.__apiClient.addF5LoadBalancer(dev)
+                                if ret.id:
+                                    self.__tcRunLogger.\
+                                        debug("==== AddF5 "
+                                              "Successful=====")
+                                    self.__addToCleanUp("F5LoadBalancer", ret.id)
+                            elif provider.name == 'NiciraNvp':
                                 cmd =  addNiciraNvpDevice.addNiciraNvpDeviceCmd()
                                 cmd.hostname = device.hostname
                                 cmd.username = device.username
@@ -603,12 +603,12 @@ class DeployDataCenters(object):
                                 ret = self.__apiClient.addNiciraNvpDevice(cmd)
                                 self.__tcRunLogger.\
                                     debug("==== AddNiciraNvp Successful =====")
-                            self.__addToCleanUp("NiciraNvp", ret.id)
-                        else:
-                            raise InvalidParameterException(
-                                "Device %s doesn't match "
-                                "any know provider "
-                                "type" % device)
+                                self.__addToCleanUp("NiciraNvp", ret.id)
+                            else:
+                                raise InvalidParameterException(
+                                    "Device %s doesn't match "
+                                    "any know provider "
+                                    "type" % device)
                     self.enableProvider(result.id)
         except Exception as e:
             print "Exception Occurred: %s" % GetDetailExceptionInfo(e)
