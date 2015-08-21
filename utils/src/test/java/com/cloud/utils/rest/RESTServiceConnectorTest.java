@@ -21,7 +21,6 @@ package com.cloud.utils.rest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -56,7 +55,6 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 
 public class RESTServiceConnectorTest {
     private static final BasicStatusLine HTTP_200_STATUS_LINE = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
@@ -169,38 +167,42 @@ public class RESTServiceConnectorTest {
 
     @Test
     public void testExecuteRetrieveObject() throws Exception {
-        final HttpEntity entity = mock(HttpEntity.class);
+        final TestPojo existingObject = new TestPojo();
+        existingObject.setField("existingValue");
+        final String newObjectJson = gson.toJson(existingObject);
         final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
-        when(response.getEntity()).thenReturn(entity);
+        when(response.getEntity()).thenReturn(new StringEntity(newObjectJson));
         when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
         final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
         final RestClient restClient = new BasicRestClient(httpClient, "localhost");
         final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
-        final List<TestPojo> objects = connector.executeRetrieveObject(TestPojo.class, "/somepath");
+        final TestPojo object = connector.executeRetrieveObject(TestPojo.class, "/somepath");
 
-        assertThat(objects, notNullValue());
-        assertThat(objects, hasSize(1));
+        assertThat(object, notNullValue());
+        assertThat(object, equalTo(existingObject));
         verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("GET"));
         verify(response).close();
     }
 
     @Test
     public void testExecuteRetrieveObjectWithParameters() throws Exception {
-        final HttpEntity entity = mock(HttpEntity.class);
+        final TestPojo existingObject = new TestPojo();
+        existingObject.setField("existingValue");
+        final String newObjectJson = gson.toJson(existingObject);
         final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
-        when(response.getEntity()).thenReturn(entity);
+        when(response.getEntity()).thenReturn(new StringEntity(newObjectJson));
         when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
         final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         when(httpClient.execute((HttpHost) any(), (HttpUriRequest) any())).thenReturn(response);
         final RestClient restClient = new BasicRestClient(httpClient, "localhost");
         final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
-        final List<TestPojo> objects = connector.executeRetrieveObject(TestPojo.class, "/somepath", DEFAULT_TEST_PARAMETERS);
+        final TestPojo object = connector.executeRetrieveObject(TestPojo.class, "/somepath", DEFAULT_TEST_PARAMETERS);
 
-        assertThat(objects, notNullValue());
-        assertThat(objects, hasSize(1));
+        assertThat(object, notNullValue());
+        assertThat(object, equalTo(existingObject));
         verify(httpClient).execute((HttpHost) any(), HttpUriRequestMethodMatcher.hasMethod("GET"));
         verify(httpClient).execute((HttpHost) any(), HttpUriRequestQueryMatcher.hasQuery("agr2=val2&agr1=val1"));
         verify(response).close();
@@ -237,20 +239,6 @@ public class RESTServiceConnectorTest {
             .build();
 
         connector.executeRetrieveObject(TestPojo.class, "/somepath");
-    }
-
-    @Test
-    public void testJsonCollections() throws Exception {
-        final GsonBuilder gsonBuilder = new GsonBuilder();
-        // gsonBuilder.registerTypeAdapter(TestPojo[].class, new CustomListDeserializer<TestPojo[]>());
-        final Gson gson = gsonBuilder.create();
-        final Type type = new TypeToken<NiciraList<TestPojo>>() {
-        }.getType();
-        final NiciraList<TestPojo> fromJson = (NiciraList<TestPojo>) gson.fromJson("{results: [{field: \"value1\"}, {field: \"value2\"}]}", type);
-
-        for (final TestPojo tp : fromJson.getResults()) {
-            System.err.println(tp.getField());
-        }
     }
 
     class NiciraList<T> {
