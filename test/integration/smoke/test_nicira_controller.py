@@ -238,7 +238,7 @@ class TestNiciraContoller(cloudstackTestCase):
             accountid='admin',
             domainid=self.domain.id,
             serviceofferingid=self.service_offering.id,
-            networkids=network.id,
+            networkids=[network.id],
             mode=self.vm_services['mode']
         )
         self.cleanup.append(virtual_machine)
