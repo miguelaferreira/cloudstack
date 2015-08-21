@@ -51,7 +51,7 @@ class TestNiciraContoller(cloudstackTestCase):
             'name':              'NiciraEnabledNetwork',
             'displaytext':       'NiciraEnabledNetwork',
             'guestiptype':       'Isolated',
-            'supportedservices': 'SourceNat,Connectivity',
+            'supportedservices': 'SourceNat,Firewall,Connectivity',
             'traffictype':       'GUEST',
             'availability':      'Optional',
             'serviceProviderList': {
