@@ -246,7 +246,7 @@ class TestNiciraContoller(cloudstackTestCase):
         self.cleanup.append(virtual_machine)
 
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
-        self.debug("Verify listVirtualMachines response for virtual machine: %s" % self.virtual_machine.id)
+        self.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
 
         self.assertEqual(isinstance(list_vm_response, list), True, 'Response rdid not return a valid list')
         self.assertNotEqual(len(list_vm_response), 0, 'List of VMs is empty')
