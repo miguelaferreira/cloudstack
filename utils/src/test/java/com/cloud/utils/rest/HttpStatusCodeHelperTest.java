@@ -8,6 +8,59 @@ import org.junit.Test;
 
 public class HttpStatusCodeHelperTest {
     @Test
+    public void testIsSuccess() throws Exception {
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_SWITCHING_PROTOCOLS), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_PROCESSING), equalTo(false));
+
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_OK), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_CREATED), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_ACCEPTED), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_NON_AUTHORITATIVE_INFORMATION), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_NO_CONTENT), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_RESET_CONTENT), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_PARTIAL_CONTENT), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_MULTI_STATUS), equalTo(true));
+
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_MULTIPLE_CHOICES), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isSuccess(HttpStatus.SC_MOVED_PERMANENTLY), equalTo(false));
+    }
+
+    @Test
+    public void testIsNotSuccess() throws Exception {
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_SWITCHING_PROTOCOLS), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_PROCESSING), equalTo(true));
+
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_OK), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_CREATED), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_ACCEPTED), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_NON_AUTHORITATIVE_INFORMATION), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_NO_CONTENT), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_RESET_CONTENT), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_PARTIAL_CONTENT), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_MULTI_STATUS), equalTo(false));
+
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_MULTIPLE_CHOICES), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isNotSuccess(HttpStatus.SC_MOVED_PERMANENTLY), equalTo(true));
+    }
+
+    @Test
+    public void testIsRedirect() throws Exception {
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_PARTIAL_CONTENT), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MULTI_STATUS), equalTo(false));
+
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MULTIPLE_CHOICES), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MOVED_PERMANENTLY), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_MOVED_TEMPORARILY), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_SEE_OTHER), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_NOT_MODIFIED), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_USE_PROXY), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_TEMPORARY_REDIRECT), equalTo(true));
+
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_BAD_REQUEST), equalTo(false));
+        assertThat(HttpStatusCodeHelper.isRedirect(HttpStatus.SC_UNAUTHORIZED), equalTo(false));
+    }
+
+    @Test
     public void testIsUnauthorized() throws Exception {
         assertThat(HttpStatusCodeHelper.isUnauthorized(HttpStatus.SC_TEMPORARY_REDIRECT), equalTo(false));
         assertThat(HttpStatusCodeHelper.isUnauthorized(HttpStatus.SC_BAD_REQUEST), equalTo(false));
@@ -16,6 +69,17 @@ public class HttpStatusCodeHelperTest {
 
         assertThat(HttpStatusCodeHelper.isUnauthorized(HttpStatus.SC_PAYMENT_REQUIRED), equalTo(false));
         assertThat(HttpStatusCodeHelper.isUnauthorized(HttpStatus.SC_FORBIDDEN), equalTo(false));
+    }
+
+    @Test
+    public void testIsNotUnauthorized() throws Exception {
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_TEMPORARY_REDIRECT), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_BAD_REQUEST), equalTo(true));
+
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_UNAUTHORIZED), equalTo(false));
+
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_PAYMENT_REQUIRED), equalTo(true));
+        assertThat(HttpStatusCodeHelper.isNotUnauthorized(HttpStatus.SC_FORBIDDEN), equalTo(true));
     }
 
     @Test

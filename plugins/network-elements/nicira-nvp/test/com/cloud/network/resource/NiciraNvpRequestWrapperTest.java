@@ -45,7 +45,6 @@ import com.cloud.network.nicira.LogicalRouterPort;
 import com.cloud.network.nicira.LogicalSwitch;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
-import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.nicira.VifAttachment;
 
 public class NiciraNvpRequestWrapperTest {
@@ -144,12 +143,8 @@ public class NiciraNvpRequestWrapperTest {
         final List<LogicalRouterPort> listPorts = new ArrayList<LogicalRouterPort>();
         listPorts.add(port1);
 
-        final NiciraNvpList<LogicalRouterPort> ports = new NiciraNvpList<LogicalRouterPort>();
-        ports.setResults(listPorts);
-        ports.setResultCount(1);
-
         final String logicalRouterUuid = "d2e05a9e-7120-4487-a5fc-414ab36d9345";
-        final String l3GatewayServiceUuid  = "d2e05a9e-7120-4487-a5fc-414ab36d9345";
+        final String l3GatewayServiceUuid = "d2e05a9e-7120-4487-a5fc-414ab36d9345";
         final List<String> publicCidrs = new ArrayList<String>();
         publicCidrs.add("10.1.1.0/24");
 
@@ -158,7 +153,7 @@ public class NiciraNvpRequestWrapperTest {
         when(niciraNvpResource.getNiciraNvpApi()).thenReturn(niciraNvpApi);
 
         try {
-            when(niciraNvpApi.findLogicalRouterPortByGatewayServiceUuid(command.getLogicalRouterUuid(), command.getL3GatewayServiceUuid())).thenReturn(ports);
+            when(niciraNvpApi.findLogicalRouterPortByGatewayServiceUuid(command.getLogicalRouterUuid(), command.getL3GatewayServiceUuid())).thenReturn(listPorts);
             doNothing().when(niciraNvpApi).updateLogicalRouterPort(command.getLogicalRouterUuid(), port1);
         } catch (final NiciraNvpApiException e) {
             fail(e.getMessage());
@@ -177,7 +172,7 @@ public class NiciraNvpRequestWrapperTest {
         final NiciraNvpApi niciraNvpApi = Mockito.mock(NiciraNvpApi.class);
 
         final String logicalSwitchUuid = "d2e05a9e-7120-4487-a5fc-414ab36d9345";
-        final String logicalSwitchPortUuid  = "d2e05a9e-7120-4487-a5fc-414ab36d9345";
+        final String logicalSwitchPortUuid = "d2e05a9e-7120-4487-a5fc-414ab36d9345";
 
         final DeleteLogicalSwitchPortCommand command = new DeleteLogicalSwitchPortCommand(logicalSwitchUuid, logicalSwitchPortUuid);
 

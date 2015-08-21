@@ -19,6 +19,9 @@
 
 package com.cloud.network.resource;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -42,6 +45,8 @@ import com.cloud.network.nicira.NiciraNvpApiException;
 import com.cloud.network.nicira.SourceNatRule;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.rest.CloudstackRESTException;
+import com.cloud.utils.rest.HttpClientHelper;
 
 public class NiciraNvpResource implements ServerResource {
 
@@ -49,6 +54,7 @@ public class NiciraNvpResource implements ServerResource {
 
     public static final int NAME_MAX_LEN = 40;
     public static final int NUM_RETRIES = 2;
+    private static final int MAX_REDIRECTS = 5;
 
     private String name;
     private String guid;
@@ -58,39 +64,47 @@ public class NiciraNvpResource implements ServerResource {
     private NiciraNvpUtilities niciraNvpUtilities;
     private CommandRetryUtility retryUtility;
 
-    protected NiciraNvpApi createNiciraNvpApi() {
-        return new NiciraNvpApi();
+    protected NiciraNvpApi createNiciraNvpApi(final String host, final String username, final String password) throws CloudstackRESTException {
+        try {
+            return NiciraNvpApi.create().host(host).username(username).password(password).httpClient(HttpClientHelper.createHttpClient(MAX_REDIRECTS)).build();
+        } catch (final KeyManagementException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        } catch (final KeyStoreException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        }
     }
 
     @Override
     public boolean configure(final String ignoredName, final Map<String, Object> params) throws ConfigurationException {
 
-        name = (String)params.get("name");
+        name = (String) params.get("name");
         if (name == null) {
             throw new ConfigurationException("Unable to find name");
         }
 
-        guid = (String)params.get("guid");
+        guid = (String) params.get("guid");
         if (guid == null) {
             throw new ConfigurationException("Unable to find the guid");
         }
 
-        zoneId = (String)params.get("zoneId");
+        zoneId = (String) params.get("zoneId");
         if (zoneId == null) {
             throw new ConfigurationException("Unable to find zone");
         }
 
-        final String ip = (String)params.get("ip");
+        final String ip = (String) params.get("ip");
         if (ip == null) {
             throw new ConfigurationException("Unable to find IP");
         }
 
-        final String adminuser = (String)params.get("adminuser");
+        final String adminuser = (String) params.get("adminuser");
         if (adminuser == null) {
             throw new ConfigurationException("Unable to find admin username");
         }
 
-        final String adminpass = (String)params.get("adminpass");
+        final String adminpass = (String) params.get("adminpass");
         if (adminpass == null) {
             throw new ConfigurationException("Unable to find admin password");
         }
@@ -99,9 +113,11 @@ public class NiciraNvpResource implements ServerResource {
         retryUtility = CommandRetryUtility.getInstance();
         retryUtility.setServerResource(this);
 
-        niciraNvpApi = createNiciraNvpApi();
-        niciraNvpApi.setControllerAddress(ip);
-        niciraNvpApi.setAdminCredentials(adminuser, adminpass);
+        try {
+            niciraNvpApi = createNiciraNvpApi(ip, adminuser, adminpass);
+        } catch (final CloudstackRESTException e) {
+            throw new ConfigurationException("Could not create a Nicira Nvp API client: " + e.getMessage());
+        }
 
         return true;
     }
@@ -149,7 +165,7 @@ public class NiciraNvpResource implements ServerResource {
         sc.setPrivateIpAddress("");
         sc.setStorageIpAddress("");
         sc.setVersion(NiciraNvpResource.class.getPackage().getImplementationVersion());
-        return new StartupCommand[] {sc};
+        return new StartupCommand[] { sc };
     }
 
     @Override
@@ -212,16 +228,16 @@ public class NiciraNvpResource implements ServerResource {
         natRuleStr.append(m.getDestinationPort());
         natRuleStr.append(" ]) -->");
         if ("SourceNatRule".equals(rule.getType())) {
-            natRuleStr.append(((SourceNatRule)rule).getToSourceIpAddressMin());
+            natRuleStr.append(((SourceNatRule) rule).getToSourceIpAddressMin());
             natRuleStr.append("-");
-            natRuleStr.append(((SourceNatRule)rule).getToSourceIpAddressMax());
+            natRuleStr.append(((SourceNatRule) rule).getToSourceIpAddressMax());
             natRuleStr.append(" [");
-            natRuleStr.append(((SourceNatRule)rule).getToSourcePort());
+            natRuleStr.append(((SourceNatRule) rule).getToSourcePort());
             natRuleStr.append(" ])");
         } else {
-            natRuleStr.append(((DestinationNatRule)rule).getToDestinationIpAddress());
+            natRuleStr.append(((DestinationNatRule) rule).getToDestinationIpAddress());
             natRuleStr.append(" [");
-            natRuleStr.append(((DestinationNatRule)rule).getToDestinationPort());
+            natRuleStr.append(((DestinationNatRule) rule).getToDestinationPort());
             natRuleStr.append(" ])");
         }
         return natRuleStr.toString();
@@ -247,25 +263,25 @@ public class NiciraNvpResource implements ServerResource {
         Match m = new Match();
         m.setDestinationIpAddresses(outsideIp);
         rulepair[0].setMatch(m);
-        ((DestinationNatRule)rulepair[0]).setToDestinationIpAddress(insideIp);
+        ((DestinationNatRule) rulepair[0]).setToDestinationIpAddress(insideIp);
 
         // create matching snat rule
         m = new Match();
         m.setSourceIpAddresses(insideIp);
         rulepair[1].setMatch(m);
-        ((SourceNatRule)rulepair[1]).setToSourceIpAddressMin(outsideIp);
-        ((SourceNatRule)rulepair[1]).setToSourceIpAddressMax(outsideIp);
+        ((SourceNatRule) rulepair[1]).setToSourceIpAddressMin(outsideIp);
+        ((SourceNatRule) rulepair[1]).setToSourceIpAddressMax(outsideIp);
 
         return rulepair;
 
     }
 
     public NatRule[] generatePortForwardingRulePair(final String insideIp, final int[] insidePorts, final String outsideIp, final int[] outsidePorts,
-            final String protocol) {
+                    final String protocol) {
         // Start with a basic static nat rule, then add port and protocol details
         final NatRule[] rulepair = generateStaticNatRulePair(insideIp, outsideIp);
 
-        ((DestinationNatRule)rulepair[0]).setToDestinationPort(insidePorts[0]);
+        ((DestinationNatRule) rulepair[0]).setToDestinationPort(insidePorts[0]);
         rulepair[0].getMatch().setDestinationPort(outsidePorts[0]);
         rulepair[0].setOrder(50);
         rulepair[0].getMatch().setEthertype("IPv4");
@@ -275,7 +291,7 @@ public class NiciraNvpResource implements ServerResource {
             rulepair[0].getMatch().setProtocol(17);
         }
 
-        ((SourceNatRule)rulepair[1]).setToSourcePort(outsidePorts[0]);
+        ((SourceNatRule) rulepair[1]).setToSourcePort(outsidePorts[0]);
         rulepair[1].getMatch().setSourcePort(insidePorts[0]);
         rulepair[1].setOrder(50);
         rulepair[1].getMatch().setEthertype("IPv4");
