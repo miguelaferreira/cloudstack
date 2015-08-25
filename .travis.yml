@@ -25,11 +25,13 @@ sudo: true
 addons:
   apt:
     packages:
+services:
+  - mysql
 before_install:
   - sudo apt-get update
   - sudo apt-get install genisoimage
 install:
   - "mvn -Pdeveloper,systemvm clean install"
 script:
-  - echo "Done"
+  - mysql -u root -e 'show databases'
 
