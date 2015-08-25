@@ -19,8 +19,8 @@ jdk:
   - oraclejdk7
 cache:
   directories:
-  - $HOME/.cache
-  - $HOME/.m2
+    - $HOME/.cache
+    - $HOME/.m2
 sudo: true
 addons:
   apt:
@@ -30,8 +30,11 @@ services:
 before_install:
   - sudo apt-get update
   - sudo apt-get install genisoimage
+  - sudo pip install --upgrade pip
+  - sudo pip install --allow-external mysql-connector-python mysql-connector-python
 install:
   - "mvn -Pdeveloper,systemvm clean install"
+  - sudo pip install --upgrade tools/marvin/dist/Marvin-*.tar.gz
 script:
   - mysql -u root -e 'show databases'
 
