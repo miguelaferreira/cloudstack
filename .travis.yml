@@ -22,5 +22,8 @@ cache:
   - $HOME/.cache
   - $HOME/.m2
 sudo: true
-script:
+install:
   - "mvn -Pdeveloper,systemvm clean install"
+script:
+  - echo "Done"
+
