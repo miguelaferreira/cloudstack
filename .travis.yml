@@ -22,6 +22,12 @@ cache:
   - $HOME/.cache
   - $HOME/.m2
 sudo: true
+addons:
+  apt:
+    packages:
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install genisoimage
 install:
   - "mvn -Pdeveloper,systemvm clean install"
 script:
