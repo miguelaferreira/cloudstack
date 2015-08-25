@@ -35,6 +35,8 @@ before_install:
 install:
   - "mvn -Pdeveloper,systemvm clean install"
   - sudo pip install --upgrade tools/marvin/dist/Marvin-*.tar.gz
+  - mvn -q -Pdeveloper -pl developer -Ddeploydb
+  - mvn -q -Pdeveloper -pl developer -Ddeploydb-simulator
 script:
   - mysql -u root -e 'show databases'
 
