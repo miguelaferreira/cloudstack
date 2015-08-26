@@ -11,6 +11,8 @@ addons:
     packages:
 services:
   - mysql
+matrix:
+  fast_finish: true
 env:
   matrix:
     - TESTS="smoke/test_affinity_groups smoke/test_primary_storage"
