@@ -47,6 +47,7 @@ before_install:
   - sudo rm /etc/mavenrc
   - export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Djava.security.egd=file:/dev/./urandom"
 install:
+  - echo Skipping unit tests in this job = ${SKIP_UNIT_TESTS}
   - mvn -Pdeveloper,systemvm -Dsimulator -DskipTests=${SKIP_UNIT_TESTS} clean install
   - sudo pip install --upgrade tools/marvin/dist/Marvin-*.tar.gz
   - mvn -q -Pdeveloper -pl developer -Ddeploydb
