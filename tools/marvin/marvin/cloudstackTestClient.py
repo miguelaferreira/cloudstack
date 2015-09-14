@@ -125,6 +125,7 @@ class CSTestClient(object):
             Step1 : Create a CS Connection Object
             '''
             mgmt_details = self.__mgmtDetails
+            print "DEBUG :: __createApiClient (1st conn) ==> mgmt_details = %s" % mgmt_details
             self.__csConnection = CSConnection(mgmt_details,
                                                self.__asyncTimeOut,
                                                self.__logger)
@@ -168,6 +169,7 @@ class CSTestClient(object):
                 Now Create the Connection objects and Api Client using
                 new details
                 '''
+                print "DEBUG :: __createApiClient (2nd conn) ==> mgmt_details = %s" % mgmt_details
                 self.__csConnection = CSConnection(mgmt_details,
                                                    self.__asyncTimeOut,
                                                    self.__logger)
@@ -367,6 +369,7 @@ class CSTestClient(object):
                 mgmt_details.apiKey = apiKey
                 mgmt_details.securityKey = securityKey
 
+            print "DEBUG :: __createUserApiClient ==> mgmt_details = %s" % mgmt_details
             newUserConnection =\
                 CSConnection(mgmt_details,
                              self.__csConnection.asyncTimeout,
