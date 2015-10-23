@@ -544,6 +544,7 @@ class TestVPCOffering(cloudstackTestCase):
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc)
 
         gateway = vpc.cidr.split('/')[0]
@@ -564,6 +565,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 gateway=gateway,
                                 vpcid=vpc.id
                                 )
+        self.cleanup.append(network)
         self.debug("Created network with ID: %s" % network.id)
 
         self.debug("Deploying virtual machines in network: %s" % vpc.name)
@@ -576,6 +578,7 @@ class TestVPCOffering(cloudstackTestCase):
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
+        self.cleanup.append(virtual_machine)
         self.debug("Deployed VM in network: %s" % network.id)
 
         self.debug("Associating public IP for network: %s" % network.name)
@@ -587,6 +590,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
+        self.cleanup.append(public_ip)
         self.debug("Associated %s with network %s" % (
                                         public_ip.ipaddress.ipaddress,
                                         vpc.id
@@ -663,6 +667,7 @@ class TestVPCOffering(cloudstackTestCase):
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc)
 
         gateway = vpc.cidr.split('/')[0]
@@ -683,6 +688,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 gateway=gateway,
                                 vpcid=vpc.id
                                 )
+        self.cleanup.append(network)
         self.debug("Created network with ID: %s" % network.id)
 
         self.debug("Deploying virtual machines in network: %s" % vpc.name)
@@ -706,6 +712,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
+        self.cleanup.append(public_ip)
         self.debug("Associated %s with network %s" % (
                                         public_ip.ipaddress.ipaddress,
                                         network.id
@@ -784,6 +791,7 @@ class TestVPCOffering(cloudstackTestCase):
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc)
 
         gateway = vpc.cidr.split('/')[0]
@@ -803,7 +811,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 zoneid=self.zone.id,
                                 gateway=gateway,
                                 vpcid=vpc.id
-                                )
+        self.cleanup.append(network)
         self.debug("Deploying virtual machines in network: %s" % vpc.name)
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
@@ -814,6 +822,7 @@ class TestVPCOffering(cloudstackTestCase):
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
+        self.cleanup.append(virtual_machine)
         self.debug("Deployed VM in network: %s" % network.id)
 
         self.debug("Associating public IP for network: %s" % network.name)
@@ -825,6 +834,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
+        self.cleanup.append(public_ip)
         self.debug("Associated %s with network %s" % (
                                         public_ip.ipaddress.ipaddress,
                                         network.id
