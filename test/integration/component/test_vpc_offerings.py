@@ -724,6 +724,7 @@ class TestVPCOffering(cloudstackTestCase):
                                     self.services["fw_rule"],
                                     ipaddressid=public_ip.ipaddress.id
                                   )
+            self.cleanup.append(public_ip)
             static_nat.enable(
                               self.apiclient,
                               ipaddressid=public_ip.ipaddress.id,
