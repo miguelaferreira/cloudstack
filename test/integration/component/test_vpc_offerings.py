@@ -811,6 +811,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 zoneid=self.zone.id,
                                 gateway=gateway,
                                 vpcid=vpc.id
+                                )
         self.cleanup.append(network)
         self.debug("Deploying virtual machines in network: %s" % vpc.name)
         # Spawn an instance in that network
