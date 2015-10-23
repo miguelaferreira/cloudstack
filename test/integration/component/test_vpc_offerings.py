@@ -213,6 +213,7 @@ class TestVPCOffering(cloudstackTestCase):
     def tearDown(self):
         self.debug("test_vpc_offering#tearDown")
         try:
+            self.cleanup.reverse()
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
