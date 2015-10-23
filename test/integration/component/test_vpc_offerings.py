@@ -937,6 +937,7 @@ class TestVPCOffering(cloudstackTestCase):
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc)
 
         self.debug("Updating name & display text of the vpc offering created")
@@ -1172,6 +1173,7 @@ class TestVPCOffering(cloudstackTestCase):
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
+        self.cleanup.append(vpc)
         self.debug("Validating Redundant VPC Nw creation")
         self.validate_vpc_network(vpc)
 
